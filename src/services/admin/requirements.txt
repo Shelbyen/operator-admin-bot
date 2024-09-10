@@ -1,0 +1,7 @@
+aiogram==3.10.0
+auto_mix_prep==0.2.0
+pydantic==2.8.2
+pydantic_settings==2.3.4
+python-dotenv==1.0.1
+SQLAlchemy==2.0.31
+asyncpg==0.29.0
