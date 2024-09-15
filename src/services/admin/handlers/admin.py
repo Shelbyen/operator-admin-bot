@@ -14,6 +14,9 @@ router = Router()
 router.message.filter(ChatTypeFilter())
 
 
+start_message = "Добавить чаты - по нажатию на кнопку бот дает ссылку на добавления чатов, при нажатии на нее автоматически откроется меню TG с выбором чатов. После выбора чата необходимо просто нажат на кнопку 'Добавить бота' не добавляю ему каких либо привилегий.\nУдалить чаты - по нажатию на кнопку выпадет меню со всеми подключенными чатами. При нажатии на чат он автоматически удалится.\nДобавить операторов - по нажатию выдаст ссылку-приглашение. Срок действия ссылки - 15 минут, после этого необходимо снова создать ссылку.\nУдалить операторов - по нажатию выпадает меню со всеми операторами. При нажатии удаляет оператора.\n"
+
+
 @router.callback_query(F.data == 'cancel')
 async def cancel(call: CallbackQuery, state: FSMContext):
     await call.message.edit_text("Ок")
@@ -22,7 +25,7 @@ async def cancel(call: CallbackQuery, state: FSMContext):
 
 @router.message(Command('start'))
 async def start_bot(message: Message):
-    await message.answer('Ваше меню:', reply_markup=create_menu())
+    await message.answer(start_message, reply_markup=create_menu())
 
 
 @router.message(F.text.lower() == 'добавить чаты')
