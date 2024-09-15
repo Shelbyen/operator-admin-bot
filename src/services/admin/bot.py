@@ -6,15 +6,22 @@ from config.project_config import settings
 from handlers import admin
 from middlewares.permission_middleware import PermissionMiddleware
 from services.admin_service import admin_service
+from aiogram.types import BotCommandScopeDefault
 
 
-async def on_startup():
+async def set_commands(bot: Bot):
+    commands = []
+    await bot.set_my_commands(commands, BotCommandScopeDefault())
+
+
+async def on_startup(bot: Bot):
     admins = dir(settings)[:4]
     admins.pop(admins.index('TOKEN'))
     for ad in admins:
         pk = getattr(settings, ad)
         if not await admin_service.exists(pk):
             await admin_service.fast_create(pk)
+    await set_commands(bot)
     print('Бот вышел в онлайн')
 
 

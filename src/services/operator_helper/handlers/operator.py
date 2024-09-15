@@ -14,6 +14,9 @@ router = Router()
 router.message.filter(ChatTypeFilter())
 
 
+start_message = "Отправить сообщение - выпадает список подключенных чатов, после нажатия данный чат будет выбран. Далее потребует сообщение. После успешной отправки бот выдаст соответсвующее сообщение."
+
+
 class OrderSend(StatesGroup):
     write_text = State()
     choosing_chats = State()
@@ -28,7 +31,7 @@ async def cancel(call: CallbackQuery, state: FSMContext):
 @router.message(Command('start'))
 async def menu(message: Message, state: FSMContext):
     await state.clear()
-    await message.answer("Меню", reply_markup=create_menu())
+    await message.answer(start_message, reply_markup=create_menu())
 
 
 @router.message(F.text.lower() == 'отправить сообщение', StateFilter(None))
