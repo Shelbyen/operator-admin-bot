@@ -5,7 +5,7 @@ from aiogram.filters import Command, StateFilter
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import StatesGroup, State
 from aiogram.types import CallbackQuery, Message, InputMediaPhoto, InputMediaDocument, InputMediaVideo, InputMediaAudio, \
-    InputMediaAnimation
+    InputMediaAnimation, ReplyKeyboardRemove
 
 from keyboards.operator_kb import *
 from filters.chat_type import ChatTypeFilter
@@ -31,25 +31,18 @@ async def cancel(call: CallbackQuery, state: FSMContext):
 @router.message(Command('start'))
 async def menu(message: Message, state: FSMContext):
     await state.clear()
-    await message.answer(start_message, reply_markup=create_menu())
+    await message.answer(start_message, reply_markup=ReplyKeyboardRemove())
+    await activate_sender(message, state)
 
 
-@router.message(F.text.lower() == 'отправить сообщение', StateFilter(None))
+@router.message(StateFilter(None))
 async def activate_sender(message: Message, state: FSMContext):
     await state.set_state(OrderSend.choosing_chats)
     await message.answer("Выберите подключенный чат:",
                                  reply_markup=await create_chat_choosing(0))
 
 
-@router.callback_query(OrderSend.choosing_chats, F.data[0] == '1')
-async def choosing_chats(call: CallbackQuery, state: FSMContext):
-    page = int(call.data.split('|')[2])
-    await state.set_data({})
-    await call.message.edit_text("Выберите подключенный чат:",
-                                 reply_markup=await create_chat_choosing(page))
-
-
-@router.callback_query(OrderSend.write_text, F.data[0] == '1')
+@router.callback_query(F.data[0] == '1')
 async def choosing_chats(call: CallbackQuery, state: FSMContext):
     page = int(call.data.split('|')[2])
     await state.set_data({})
@@ -95,3 +88,4 @@ async def choosing_chats(message: Message, state: FSMContext, album: Optional[Li
     await message.answer('Сообщение успешно отправлено!')
     await state.clear()
     await message.bot.delete_message(chat_id=message.from_user.id, message_id=message_id)
+    await activate_sender(message, state)

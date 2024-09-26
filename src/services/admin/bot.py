@@ -6,12 +6,10 @@ from config.project_config import settings
 from handlers import admin
 from middlewares.permission_middleware import PermissionMiddleware
 from services.admin_service import admin_service
-from aiogram.types import BotCommandScopeDefault
 
 
 async def set_commands(bot: Bot):
-    commands = []
-    await bot.set_my_commands(commands, BotCommandScopeDefault())
+    await bot.delete_my_commands()
 
 
 async def on_startup(bot: Bot):
