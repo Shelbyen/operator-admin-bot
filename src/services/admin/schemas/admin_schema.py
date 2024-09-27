@@ -4,13 +4,13 @@ from pydantic import BaseModel
 
 
 class AdminBase(BaseModel):
-    id: int
+    id: str
     invite_hash: int
     invite_date: datetime
 
 
 class AdminCreate(BaseModel):
-    id: int
+    id: str
     invite_hash: int
 
 

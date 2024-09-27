@@ -12,7 +12,7 @@ class PermissionMiddleware:
             event: Message | CallbackQuery,
             data: Dict[str, Any]
     ) -> Any:
-        user = await admin_service.exists(event.from_user.id)
+        user = await admin_service.exists(str(event.from_user.id))
         if user:
             return await handler(event, data)
         return None

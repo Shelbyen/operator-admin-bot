@@ -23,27 +23,27 @@ class AdminService(BaseService):
             offset=offset
         )
 
-    async def exists(self, admin_id: int) -> bool:
+    async def exists(self, admin_id: str) -> bool:
         return await self.repository.exists(id=admin_id)
 
-    async def get_with_update(self, admin_id: int) -> ModelType | None:
+    async def get_with_update(self, admin_id: str) -> ModelType | None:
         admin = await self.repository.get_single(id=admin_id)
         if admin is None:
             return
         if admin.invite_date < datetime.now():
             admin.invite_date = datetime.now() + timedelta(minutes=15)
-            admin.invite_hash = hash(admin.id + randint(10000, 10000000))
+            admin.invite_hash = hash(int(admin.id) + randint(10000, 10000000))
             await self.update(admin_id, AdminUpdate(invite_hash=admin.invite_hash, invite_date=admin.invite_date))
         return admin
 
-    async def check_invite(self, pk: int, invite_hash: int) -> bool:
+    async def check_invite(self, pk: str, invite_hash: int) -> bool:
         admin = await self.repository.get_single(id=pk)
         if admin is None:
             return False
         return admin.invite_hash == invite_hash and admin.invite_date >= datetime.now()
 
-    async def fast_create(self, pk: int) -> ModelType:
-        return await self.create(AdminCreate(id=pk, invite_hash=hash(pk + randint(10000, 10000000))))
+    async def fast_create(self, pk: str) -> ModelType:
+        return await self.create(AdminCreate(id=pk, invite_hash=hash(int(pk) + randint(10000, 10000000))))
 
 
 admin_service = AdminService(repository=admin_repository)

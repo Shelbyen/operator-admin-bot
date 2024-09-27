@@ -7,9 +7,7 @@ load_dotenv()
 
 class Settings(BaseSettings):
     TOKEN: str
-    SHEBIK: int
-    JAKA2005: int
-    ADMIN_3: int
+    ADMINS: str
 
 
 settings = Settings()

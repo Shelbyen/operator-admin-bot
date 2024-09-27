@@ -2,7 +2,7 @@ from pydantic import BaseModel
 
 
 class ChatBase(BaseModel):
-    id: int
+    id: str
     name: str
 
 

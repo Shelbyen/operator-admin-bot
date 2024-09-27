@@ -25,19 +25,20 @@ async def cancel(call: CallbackQuery, state: FSMContext):
 
 @router.message(Command('start'))
 async def start_bot(message: Message):
+    await message.bot.delete_my_commands()
     await message.answer(start_message, reply_markup=create_menu(), parse_mode="Markdown")
 
 
 @router.message(F.text.lower() == 'добавить чаты')
 async def add_chat(message: Message):
-    admin = await admin_service.get_with_update(message.from_user.id)
+    admin = await admin_service.get_with_update(str(message.from_user.id))
     link = create_deep_link('helper_operator_bot', 'startgroup', str(admin.invite_hash), encode=True)
     await message.answer(f'Используйте ссылку ниже чтобы добавить бота в группу: {link}')
 
 
 @router.message(F.text.lower() == "добавить операторов")
 async def get_ref(message: Message):
-    admin = await admin_service.get_with_update(message.from_user.id)
+    admin = await admin_service.get_with_update(str(message.from_user.id))
     link = create_deep_link('helper_operator_bot', 'start', str(admin.invite_hash), encode=True)
     await message.answer(f"Ссылка для приглашения оператора: {link}")
 
@@ -60,7 +61,7 @@ async def choosing_delete_chat(call: CallbackQuery):
 async def delete_chat(call: CallbackQuery):
     chat_id = int(call.data.split('|')[1])
 
-    await chat_service.delete(chat_id)
+    await chat_service.delete(str(chat_id))
     await choosing_delete_chat(call)
 
 
@@ -80,7 +81,7 @@ async def choosing_delete_admin(call: CallbackQuery):
 
 @router.callback_query(F.data[0] == '6')
 async def delete_admin(call: CallbackQuery):
-    operator_id = int(call.data.split('|')[1])
+    operator_id = call.data.split('|')[1]
 
     await operator_service.delete(operator_id)
     await choosing_delete_admin(call)

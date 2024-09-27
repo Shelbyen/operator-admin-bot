@@ -18,7 +18,7 @@ class OperatorService(BaseService):
             offset=offset
         )
 
-    async def exists(self, admin_id: int) -> bool:
+    async def exists(self, admin_id: str) -> bool:
         return await self.repository.exists(id=admin_id)
 
 

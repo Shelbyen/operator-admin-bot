@@ -12,13 +12,15 @@ async def set_commands(bot: Bot):
     await bot.delete_my_commands()
 
 
-async def on_startup(bot: Bot):
-    admins = dir(settings)[:4]
-    admins.pop(admins.index('TOKEN'))
+async def check_admin_list():
+    admins = map(int, settings.ADMINS.split('/'))
     for ad in admins:
-        pk = getattr(settings, ad)
-        if not await admin_service.exists(pk):
-            await admin_service.fast_create(pk)
+        if not await admin_service.exists(ad):
+            await admin_service.fast_create(ad)
+
+
+async def on_startup(bot: Bot):
+    await check_admin_list()
     await set_commands(bot)
     print('Бот вышел в онлайн')
 

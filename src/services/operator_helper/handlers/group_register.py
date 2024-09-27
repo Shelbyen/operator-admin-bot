@@ -19,6 +19,6 @@ async def add_chat(message: Message, command: CommandObject):
     if not await admin_service.check_invite(int(payload)):
         await message.answer('Истек срок действия ссылки!')
         return
-    await chat_service.create(ChatCreate(id=message.chat.id, name=message.chat.full_name))
+    await chat_service.create(ChatCreate(id=str(message.chat.id), name=message.chat.full_name))
     print(f'Новый чат!\nid: {message.chat.id}\nname: {message.chat.full_name}')
     await message.answer('Чат успешно добавлен!')
