@@ -39,24 +39,22 @@ async def menu(message: Message, state: FSMContext):
 async def activate_sender(message: Message, state: FSMContext):
     await state.set_state(OrderSend.choosing_chats)
     await message.answer("Выберите подключенный чат:",
-                                 reply_markup=await create_chat_choosing(0))
+                                 reply_markup=await create_chat_choosing())
 
 
 @router.callback_query(F.data[0] == '1')
 async def choosing_chats(call: CallbackQuery, state: FSMContext):
-    page = int(call.data.split('|')[2])
     await state.set_data({})
     await state.set_state(OrderSend.choosing_chats)
     await call.message.edit_text("Выберите подключенный чат:",
-                                 reply_markup=await create_chat_choosing(page))
+                                 reply_markup=await create_chat_choosing())
 
 
 @router.callback_query(OrderSend.choosing_chats, F.data[0] == '0')
 async def active_mail_message(call: CallbackQuery, state: FSMContext):
     await state.update_data({'chat_id': int(call.data.split('|')[1]), 'message_id': call.message.message_id})
-    page = int(call.data.split('|')[2])
     await state.set_state(OrderSend.write_text)
-    await call.message.edit_text("Теперь отправьте ваше сообщение", reply_markup=back_to_choosing(page))
+    await call.message.edit_text("Теперь отправьте ваше сообщение", reply_markup=back_to_choosing())
 
 
 @router.message(OrderSend.write_text)

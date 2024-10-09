@@ -46,15 +46,7 @@ async def get_ref(message: Message):
 @router.message(F.text.lower() == "удалить чаты")
 async def choosing_delete_chat_start(message: Message):
     await message.answer("Выберите чаты которые хотите удалить:",
-                         reply_markup=await create_chat_choosing(0))
-
-
-@router.callback_query(F.data[0] == '3')
-async def choosing_delete_chat(call: CallbackQuery):
-    page = int(call.data.split('|')[2])
-
-    await call.message.edit_text("Выберите чаты которые хотите удалить:",
-                                 reply_markup=await create_chat_choosing(page))
+                         reply_markup=await create_chat_choosing())
 
 
 @router.callback_query(F.data[0] == '4')
@@ -62,21 +54,13 @@ async def delete_chat(call: CallbackQuery):
     chat_id = int(call.data.split('|')[1])
 
     await chat_service.delete(str(chat_id))
-    await choosing_delete_chat(call)
+    await choosing_delete_chat_start(call.message)
 
 
 @router.message(F.text.lower() == "удалить операторов")
 async def choosing_delete_admin_start(message: Message):
     await message.answer("Выберите операторов которых хотите удалить:",
-                         reply_markup=await create_admin_choosing(0))
-
-
-@router.callback_query(F.data[0] == '5')
-async def choosing_delete_admin(call: CallbackQuery):
-    page = int(call.data.split('|')[2])
-
-    await call.message.edit_text("Выберите операторов которых хотите удалить:",
-                                 reply_markup=await create_admin_choosing(page))
+                         reply_markup=await create_admin_choosing())
 
 
 @router.callback_query(F.data[0] == '6')
@@ -84,4 +68,4 @@ async def delete_admin(call: CallbackQuery):
     operator_id = call.data.split('|')[1]
 
     await operator_service.delete(operator_id)
-    await choosing_delete_admin(call)
+    await choosing_delete_admin_start(call.message)

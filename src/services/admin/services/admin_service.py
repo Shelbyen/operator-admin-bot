@@ -32,7 +32,7 @@ class AdminService(BaseService):
             return
         if admin.invite_date < datetime.now():
             admin.invite_date = datetime.now() + timedelta(minutes=15)
-            admin.invite_hash = hash(int(admin.id) + randint(10000, 10000000))
+            admin.invite_hash = hash(randint(10000, 10000000))
             await self.update(admin_id, AdminUpdate(invite_hash=admin.invite_hash, invite_date=admin.invite_date))
         return admin
 
@@ -43,7 +43,7 @@ class AdminService(BaseService):
         return admin.invite_hash == invite_hash and admin.invite_date >= datetime.now()
 
     async def fast_create(self, pk: str) -> ModelType:
-        return await self.create(AdminCreate(id=pk, invite_hash=hash(int(pk) + randint(10000, 10000000))))
+        return await self.create(AdminCreate(id=pk, invite_hash=hash(randint(10000, 10000000))))
 
 
 admin_service = AdminService(repository=admin_repository)

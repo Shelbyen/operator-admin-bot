@@ -6,6 +6,7 @@ from config.project_config import settings
 from handlers import operator, user_register, group_register
 from middlewares.album_middleware import AlbumMiddleware
 from middlewares.permission_middleware import PermissionMiddleware
+from middlewares.log_middleware import LogMiddleware
 
 
 async def on_startup():
@@ -17,6 +18,8 @@ async def main():
     dp = Dispatcher()
 
     dp.message.outer_middleware(AlbumMiddleware())
+    dp.callback_query.outer_middleware(LogMiddleware())
+    dp.message.outer_middleware(LogMiddleware())
     user_register.router.message.middleware(PermissionMiddleware(is_operator=False))
     operator.router.message.middleware(PermissionMiddleware())
     group_register.router.message.middleware(PermissionMiddleware())
