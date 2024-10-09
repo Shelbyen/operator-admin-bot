@@ -15,5 +15,11 @@ class AdminRepository(SqlAlchemyRepository[AdminModel, AdminCreate, AdminUpdate]
             row = await session.execute(stmt)
             return row.scalars().first()
 
+    async def exists(self, **filters) -> bool:
+        stmt = select(self.model).filter_by(**filters)
+        async with self._session_factory() as session:
+            result = await session.execute(stmt)
+            return result.scalar() is not None
+
 
 admin_repository = AdminRepository(model=AdminModel, db_session=db_helper.get_db_session)

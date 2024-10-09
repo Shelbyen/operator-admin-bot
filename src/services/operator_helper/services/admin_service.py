@@ -11,5 +11,8 @@ class AdminService(BaseService):
             return False
         return admin.invite_date >= datetime.now()
 
+    async def exists(self, admin_id: str) -> bool:
+        return await self.repository.exists(id=admin_id)
+
 
 admin_service = AdminService(repository=admin_repository)

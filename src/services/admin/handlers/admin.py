@@ -31,8 +31,7 @@ async def start_bot(message: Message):
 
 @router.message(F.text.lower() == 'добавить чаты')
 async def add_chat(message: Message):
-    admin = await admin_service.get_with_update(str(message.from_user.id))
-    link = create_deep_link('helper_operator_bot', 'startgroup', str(admin.invite_hash), encode=True)
+    link = 'https://t.me/helper_operator_bot?startgroup='
     await message.answer(f'Используйте ссылку ниже чтобы добавить бота в группу: {link}')
 
 

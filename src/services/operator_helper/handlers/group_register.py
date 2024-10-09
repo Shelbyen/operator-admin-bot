@@ -1,7 +1,6 @@
-from aiogram import Router
-from aiogram.filters import CommandStart, CommandObject
-from aiogram.types import Message
-from aiogram.utils.payload import decode_payload
+from aiogram import Router, Bot
+from aiogram.filters import ChatMemberUpdatedFilter, JOIN_TRANSITION
+from aiogram.types import ChatMemberUpdated
 
 from filters.chat_type import ChatTypeFilter
 from schemas.chat_schema import ChatCreate
@@ -12,13 +11,12 @@ router = Router()
 router.message.filter(ChatTypeFilter(is_group=True))
 
 
-@router.message(CommandStart(deep_link=True))
-async def add_chat(message: Message, command: CommandObject):
-    args = command.args
-    payload = decode_payload(args)
-    if not await admin_service.check_invite(int(payload)):
-        await message.answer('Истек срок действия ссылки!')
+@router.my_chat_member(ChatMemberUpdatedFilter(member_status_changed=JOIN_TRANSITION))
+async def add_chat(event: ChatMemberUpdated, bot: Bot):
+    if not await admin_service.exists(str(event.from_user.id)):
+        await event.answer('Вы не админ!')
+        await bot.leave_chat(event.chat.id)
         return
-    await chat_service.create(ChatCreate(id=str(message.chat.id), name=message.chat.full_name))
-    print(f'Новый чат!\nid: {message.chat.id}\nname: {message.chat.full_name}')
-    await message.answer('Чат успешно добавлен!')
+    await chat_service.create(ChatCreate(id=str(event.chat.id), name=event.chat.full_name))
+    print(f'Новый чат!\nid: {event.chat.id}\nname: {event.chat.full_name}')
+    await event.answer('Чат успешно добавлен!')
