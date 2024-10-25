@@ -31,7 +31,7 @@ async def cancel(call: CallbackQuery, state: FSMContext):
 @router.message(Command('start'))
 async def menu(message: Message, state: FSMContext):
     await state.clear()
-    await message.answer(start_message, reply_markup=ReplyKeyboardRemove())
+    # await message.answer(start_message, reply_markup=ReplyKeyboardRemove())
     await activate_sender(message, state)
 
 
