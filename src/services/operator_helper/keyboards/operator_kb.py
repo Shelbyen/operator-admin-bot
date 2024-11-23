@@ -17,7 +17,7 @@ async def create_chat_choosing(all_chats):
         if datetime.now() - i.updated_at > timedelta(minutes=15):
             chat_info = await bot.get_chat(i.id)
             if chat_info.full_name != i.name:
-                chat_service.update(pk=i.id, ChatUpdate(name=chat_info.full_name))
+                chat_service.update(pk=i.id, model=ChatUpdate(name=chat_info.full_name))
         kb.append(
             [InlineKeyboardButton(text=i.name,
                                   callback_data=f'0|{i.id}|0')])
