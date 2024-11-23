@@ -4,13 +4,10 @@ from math import ceil
 from aiogram import Bot
 from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup, ReplyKeyboardMarkup, KeyboardButton
 
-from services.chat_service import chat_service
-
-from schemas.chat_schema import ChatUpdate
 
 
-async def create_chat_choosing(bot: Bot):
-    all_chats = await chat_service.filter()
+
+async def create_chat_choosing(all_chats):
     if all_chats is None:
         all_chats = []
 

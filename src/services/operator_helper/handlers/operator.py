@@ -9,6 +9,8 @@ from aiogram.types import CallbackQuery, Message, InputMediaPhoto, InputMediaDoc
 
 from keyboards.operator_kb import *
 from filters.chat_type import ChatTypeFilter
+from services.chat_service import chat_service
+from schemas.chat_schema import ChatUpdate
 
 router = Router()
 router.message.filter(ChatTypeFilter())
@@ -38,16 +40,20 @@ async def menu(message: Message, state: FSMContext):
 @router.message(StateFilter(None))
 async def activate_sender(message: Message, state: FSMContext):
     await state.set_state(OrderSend.choosing_chats)
-    await message.answer("Выберите подключенный чат:",
-                                 reply_markup=await create_chat_choosing())
+    all_chats = await chat_service.filter()
+    for chat_group in list(zip(*[iter(all_chats)] * 99)):
+        await message.answer("Выберите подключенный чат:",
+                                     reply_markup=await create_chat_choosing())
 
 
 @router.callback_query(F.data[0] == '1')
 async def choosing_chats(call: CallbackQuery, state: FSMContext):
     await state.set_data({})
     await state.set_state(OrderSend.choosing_chats)
-    await call.message.edit_text("Выберите подключенный чат:",
-                                 reply_markup=await create_chat_choosing())
+    all_chats = await chat_service.filter()
+    for chat_group in list(zip(*[iter(all_chats)]*99)):
+        await call.message.edit_text("Выберите подключенный чат:",
+                                     reply_markup=await create_chat_choosing(chat_group))
 
 
 @router.callback_query(OrderSend.choosing_chats, F.data[0] == '0')
