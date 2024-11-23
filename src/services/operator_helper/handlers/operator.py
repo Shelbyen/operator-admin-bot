@@ -63,7 +63,7 @@ async def choosing_chats(call: CallbackQuery, state: FSMContext):
 async def active_mail_message(call: CallbackQuery, state: FSMContext):
     await state.update_data({'chat_id': int(call.data.split('|')[1]), 'message_id': call.message.message_id})
     await state.set_state(OrderSend.write_text)
-    await call.message.edit_text("Теперь отправьте ваше сообщение", reply_markup=back_to_choosing())
+    await call.message.answer("Теперь отправьте ваше сообщение", reply_markup=back_to_choosing())
 
 
 @router.message(OrderSend.write_text)
