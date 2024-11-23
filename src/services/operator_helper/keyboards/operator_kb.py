@@ -1,11 +1,15 @@
+from datetime import datetime, timedelta
 from math import ceil
 
+from aiogram import Bot
 from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup, ReplyKeyboardMarkup, KeyboardButton
 
 from services.chat_service import chat_service
 
+from schemas.chat_schema import ChatUpdate
 
-async def create_chat_choosing():
+
+async def create_chat_choosing(bot: Bot):
     all_chats = await chat_service.filter()
     if all_chats is None:
         all_chats = []
@@ -13,6 +17,10 @@ async def create_chat_choosing():
     a = sorted(all_chats, key=lambda x: x.name.lower())
     kb = []
     for i in a:
+        if datetime.now() - i.updated_at > timedelta(minutes=15):
+            chat_info = await bot.get_chat(i.id)
+            if chat_info.full_name != i.name:
+                chat_service.update(pk=i.id, ChatUpdate(name=chat_info.full_name))
         kb.append(
             [InlineKeyboardButton(text=i.name,
                                   callback_data=f'0|{i.id}|0')])

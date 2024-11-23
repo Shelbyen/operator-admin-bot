@@ -11,7 +11,7 @@ class ChatCreate(ChatBase):
 
 
 class ChatUpdate(ChatBase):
-    id: None
+    name: str
 
 
 class ChatResponse(ChatBase):
