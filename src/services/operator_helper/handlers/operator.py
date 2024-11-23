@@ -13,6 +13,8 @@ from services.chat_service import chat_service
 
 router = Router()
 router.message.filter(ChatTypeFilter())
+
+
 def chunks(lst, chunk_size):
     for i in range(0, len(lst), chunk_size):
         yield lst[i:i + chunk_size]
@@ -43,8 +45,7 @@ async def menu(message: Message, state: FSMContext):
 async def activate_sender(message: Message, state: FSMContext):
     await state.set_state(OrderSend.choosing_chats)
     all_chats = sorted(await chat_service.filter(limit=300), key=lambda x: x.name.lower())
-    print(len(all_chats))
-    for chat_group in list(chunks(all_chats, 99)):
+    for chat_group in list(chunks(all_chats, 100)):
         await message.answer("Выберите подключенный чат:",
                                      reply_markup=await create_chat_choosing(chat_group, message.bot))
 
@@ -54,7 +55,7 @@ async def choosing_chats(call: CallbackQuery, state: FSMContext):
     await state.set_data({})
     await state.set_state(OrderSend.choosing_chats)
     all_chats = sorted(await chat_service.filter(limit=300), key=lambda x: x.name.lower())
-    for chat_group in list(chunks(all_chats, 99)):
+    for chat_group in list(chunks(all_chats, 100)):
         await call.message.edit_text("Выберите подключенный чат:",
                                      reply_markup=await create_chat_choosing(chat_group, call.bot))
 

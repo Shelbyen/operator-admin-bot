@@ -14,6 +14,11 @@ router = Router()
 router.message.filter(ChatTypeFilter())
 
 
+def chunks(lst, chunk_size):
+    for i in range(0, len(lst), chunk_size):
+        yield lst[i:i + chunk_size]
+
+
 start_message = "**Добавить чаты** - по нажатию на кнопку бот дает ссылку на добавления чатов, при нажатии на нее автоматически откроется меню TG с выбором чатов. После выбора чата необходимо просто нажат на кнопку 'Добавить бота' не добавляю ему каких либо привилегий. После добавления бот должен написать в чат 'Чат успешно добавлен'.\n\n**Удалить чаты** - по нажатию на кнопку выпадет меню со всеми подключенными чатами. При нажатии на чат он автоматически удалится.\n\n**Добавить операторов** - по нажатию выдаст ссылку-приглашение. Срок действия ссылки - 15 минут, после этого необходимо снова создать ссылку.\n\n**Удалить операторов** - по нажатию выпадает меню со всеми операторами. При нажатии удаляет оператора.\n"
 
 
@@ -44,8 +49,9 @@ async def get_ref(message: Message):
 
 @router.message(F.text.lower() == "удалить чаты")
 async def choosing_delete_chat_start(message: Message):
-    await message.answer("Выберите чаты которые хотите удалить:",
-                         reply_markup=await create_chat_choosing())
+    for chat_group in list(chunks(sorted(await chat_service.filter(limit=300), key=lambda x: x.name.lower()), 100)):
+        await message.answer("Выберите чаты которые хотите удалить:",
+                             reply_markup=await create_chat_choosing(chat_group))
 
 
 @router.callback_query(F.data[0] == '4')
