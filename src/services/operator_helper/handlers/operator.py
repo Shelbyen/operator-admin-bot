@@ -5,15 +5,17 @@ from aiogram.filters import Command, StateFilter
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import StatesGroup, State
 from aiogram.types import CallbackQuery, Message, InputMediaPhoto, InputMediaDocument, InputMediaVideo, InputMediaAudio, \
-    InputMediaAnimation, ReplyKeyboardRemove
+    InputMediaAnimation
 
 from keyboards.operator_kb import *
 from filters.chat_type import ChatTypeFilter
 from services.chat_service import chat_service
-from schemas.chat_schema import ChatUpdate
 
 router = Router()
 router.message.filter(ChatTypeFilter())
+def chunks(lst, chunk_size):
+    for i in range(0, len(lst), chunk_size):
+        yield lst[i:i + chunk_size]
 
 
 start_message = "Отправить сообщение - выпадает список подключенных чатов, после нажатия данный чат будет выбран. Далее потребует сообщение. После успешной отправки бот выдаст соответсвующее сообщение."
@@ -40,20 +42,21 @@ async def menu(message: Message, state: FSMContext):
 @router.message(StateFilter(None))
 async def activate_sender(message: Message, state: FSMContext):
     await state.set_state(OrderSend.choosing_chats)
-    all_chats = await chat_service.filter()
-    for chat_group in list(zip(*[iter(all_chats)] * 99)):
+    all_chats = sorted(await chat_service.filter(limit=300), key=lambda x: x.name.lower())
+    print(len(all_chats))
+    for chat_group in list(chunks(all_chats, 99)):
         await message.answer("Выберите подключенный чат:",
-                                     reply_markup=await create_chat_choosing(chat_group))
+                                     reply_markup=await create_chat_choosing(chat_group, message.bot))
 
 
 @router.callback_query(F.data[0] == '1')
 async def choosing_chats(call: CallbackQuery, state: FSMContext):
     await state.set_data({})
     await state.set_state(OrderSend.choosing_chats)
-    all_chats = await chat_service.filter()
-    for chat_group in list(zip(*[iter(all_chats)] * 99)):
+    all_chats = sorted(await chat_service.filter(limit=300), key=lambda x: x.name.lower())
+    for chat_group in list(chunks(all_chats, 99)):
         await call.message.edit_text("Выберите подключенный чат:",
-                                     reply_markup=await create_chat_choosing(chat_group))
+                                     reply_markup=await create_chat_choosing(chat_group, call.bot))
 
 
 @router.callback_query(OrderSend.choosing_chats, F.data[0] == '0')

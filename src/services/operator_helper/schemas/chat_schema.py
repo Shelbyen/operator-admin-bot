@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from pydantic import BaseModel
 
 
@@ -10,8 +12,9 @@ class ChatCreate(ChatBase):
     pass
 
 
-class ChatUpdate(ChatBase):
+class ChatUpdate(BaseModel):
     name: str
+    updated_at: datetime
 
 
 class ChatResponse(ChatBase):
