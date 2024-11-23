@@ -43,7 +43,7 @@ async def activate_sender(message: Message, state: FSMContext):
     all_chats = await chat_service.filter()
     for chat_group in list(zip(*[iter(all_chats)] * 99)):
         await message.answer("Выберите подключенный чат:",
-                                     reply_markup=await create_chat_choosing())
+                                     reply_markup=await create_chat_choosing(chat_group))
 
 
 @router.callback_query(F.data[0] == '1')
@@ -51,7 +51,7 @@ async def choosing_chats(call: CallbackQuery, state: FSMContext):
     await state.set_data({})
     await state.set_state(OrderSend.choosing_chats)
     all_chats = await chat_service.filter()
-    for chat_group in list(zip(*[iter(all_chats)]*99)):
+    for chat_group in list(zip(*[iter(all_chats)] * 99)):
         await call.message.edit_text("Выберите подключенный чат:",
                                      reply_markup=await create_chat_choosing(chat_group))
 
