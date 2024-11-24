@@ -1,5 +1,5 @@
 from aiogram import Router, Bot
-from aiogram.filters import ChatMemberUpdatedFilter, JOIN_TRANSITION
+from aiogram.filters import ChatMemberUpdatedFilter, JOIN_TRANSITION, LEAVE_TRANSITION
 from aiogram.types import ChatMemberUpdated
 
 from filters.chat_type import ChatTypeFilter
@@ -20,3 +20,8 @@ async def add_chat(event: ChatMemberUpdated, bot: Bot):
     await chat_service.create(ChatCreate(id=str(event.chat.id), name=event.chat.full_name))
     print(f'Новый чат!\nid: {event.chat.id}\nname: {event.chat.full_name}')
     await event.answer('Чат успешно добавлен!')
+
+@router.my_chat_member(ChatMemberUpdatedFilter(member_status_changed=LEAVE_TRANSITION))
+async def add_chat(event: ChatMemberUpdated):
+    await chat_service.delete(str(event.chat.id))
+    print(f'Чат удален!\nid: {event.chat.id}\nname: {event.chat.full_name}')
