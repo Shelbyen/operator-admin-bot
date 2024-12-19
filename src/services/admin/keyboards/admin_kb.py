@@ -51,3 +51,7 @@ def create_menu():
         input_field_placeholder="Выберите команду"
     )
     return keyboard
+
+def back_button():
+    kb = [[InlineKeyboardButton(text='Назад', callback_data='back')]]
+    return InlineKeyboardMarkup(inline_keyboard=kb)

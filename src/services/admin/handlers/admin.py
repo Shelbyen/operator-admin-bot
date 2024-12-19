@@ -9,7 +9,7 @@ from aiogram.types import Message, CallbackQuery, InputMediaPhoto, InputMediaDoc
 from aiogram.utils.deep_linking import create_deep_link
 
 from filters.chat_type import ChatTypeFilter
-from keyboards.admin_kb import create_chat_choosing, create_admin_choosing, create_menu
+from keyboards.admin_kb import create_chat_choosing, create_admin_choosing, create_menu, back_button
 from services.admin_service import admin_service
 from services.chat_service import chat_service
 from services.operator_service import operator_service
@@ -36,9 +36,8 @@ async def cancel(call: CallbackQuery, state: FSMContext):
 
 
 @router.message(Command('start'))
-async def start_bot(message: Message):
-    await message.bot.delete_my_commands()
-    await message.answer(start_message, reply_markup=create_menu(), parse_mode="Markdown")
+async def start_bot(message: Message | CallbackQuery):
+    await message.bot.send_message(message.from_user.id, start_message, reply_markup=create_menu(), parse_mode="Markdown")
 
 
 @router.message(F.text.lower() == 'добавить чаты')
@@ -86,7 +85,7 @@ async def delete_admin(call: CallbackQuery):
 @router.message(F.text.lower() == "отправить во все чаты")
 async def send_all_command(message: Message, state: FSMContext):
     await state.set_state(SendMessageToAll.write_text)
-    message = await message.answer(f"Отправьте ваше сообщение")
+    message = await message.answer(f"Отправьте ваше сообщение", reply_markup=back_button())
     await state.update_data({'message_id': message.message_id})
 
 
@@ -120,3 +119,10 @@ async def choosing_chats(message: Message, state: FSMContext, album: Optional[Li
     await message.answer('Сообщение успешно отправлено!')
     await state.clear()
     await message.bot.delete_message(chat_id=message.from_user.id, message_id=message_id)
+
+
+@router.callback_query(F.data == 'back')
+async def back_to_menu(call: CallbackQuery, state: FSMContext):
+    await state.clear()
+    await call.message.delete()
+    await start_bot(call)
