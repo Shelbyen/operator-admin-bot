@@ -1,7 +1,11 @@
+from typing import Optional, List
+
 from aiogram import Router, F
 from aiogram.filters import Command
 from aiogram.fsm.context import FSMContext
-from aiogram.types import Message, CallbackQuery
+from aiogram.fsm.state import StatesGroup, State
+from aiogram.types import Message, CallbackQuery, InputMediaPhoto, InputMediaDocument, InputMediaVideo, InputMediaAudio, \
+    InputMediaAnimation
 from aiogram.utils.deep_linking import create_deep_link
 
 from filters.chat_type import ChatTypeFilter
@@ -13,6 +17,9 @@ from services.operator_service import operator_service
 router = Router()
 router.message.filter(ChatTypeFilter())
 
+
+class SendMessageToAll(StatesGroup):
+    write_text = State()
 
 def chunks(lst, chunk_size):
     for i in range(0, len(lst), chunk_size):
@@ -49,7 +56,7 @@ async def get_ref(message: Message):
 
 @router.message(F.text.lower() == "удалить чаты")
 async def choosing_delete_chat_start(message: Message):
-    for chat_group in list(chunks(sorted(await chat_service.filter(limit=300), key=lambda x: x.name.lower()), 100)):
+    for chat_group in list(chunks(sorted(await chat_service.filter(limit=500), key=lambda x: x.name.lower()), 100)):
         await message.answer("Выберите чаты которые хотите удалить:",
                              reply_markup=await create_chat_choosing(chat_group))
 
@@ -74,3 +81,42 @@ async def delete_admin(call: CallbackQuery):
 
     await operator_service.delete(operator_id)
     await choosing_delete_admin_start(call.message)
+
+
+@router.message(F.text.lower() == "отправить во все чаты")
+async def send_all_command(message: Message, state: FSMContext):
+    await state.set_state(SendMessageToAll.write_text)
+    message = await message.answer(f"Отправьте ваше сообщение")
+    await state.update_data({'message_id': message.message_id})
+
+
+@router.message(SendMessageToAll.write_text)
+async def choosing_chats(message: Message, state: FSMContext, album: Optional[List[Message]] = None):
+    message_id = (await state.get_data())['message_id']
+    chats = await chat_service.filter(limit=500)
+    if album:
+        media_group = []
+        for msg in album:
+            if msg.photo:
+                file_id = msg.photo[-1].file_id
+                media_group.append(InputMediaPhoto(media=file_id, caption=msg.caption))
+            else:
+                obj_dict = msg.dict()
+                file_id = obj_dict[msg.content_type]['file_id']
+                if msg.document:
+                    media_group.append(InputMediaDocument(media=file_id, caption=msg.caption))
+                elif msg.video:
+                    media_group.append(InputMediaVideo(media=file_id, caption=msg.caption))
+                elif msg.audio:
+                    media_group.append(InputMediaAudio(media=file_id, caption=msg.caption))
+                elif msg.animation:
+                    media_group.append(InputMediaAnimation(media=file_id, caption=msg.caption))
+        # await state.set_data({'message': media_group, 'sent': []})
+        for i in chats:
+            await message.bot.send_media_group(i.id, media_group)
+    else:
+        for i in chats:
+            await message.copy_to(i.id)
+    await message.answer('Сообщение успешно отправлено!')
+    await state.clear()
+    await message.bot.delete_message(chat_id=message.from_user.id, message_id=message_id)

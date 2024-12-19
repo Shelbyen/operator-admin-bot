@@ -39,7 +39,11 @@ def create_menu():
         [
             KeyboardButton(text="Добавить операторов"),
             KeyboardButton(text="Удалить операторов")
+        ],
+        [
+            KeyboardButton(text="Отправить во все чаты")
         ]
+
     ]
     keyboard = ReplyKeyboardMarkup(
         keyboard=kb,

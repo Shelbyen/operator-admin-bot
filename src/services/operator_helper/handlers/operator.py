@@ -43,28 +43,41 @@ async def menu(message: Message, state: FSMContext):
 
 @router.message(StateFilter(None))
 async def activate_sender(message: Message, state: FSMContext):
-    await state.set_state(OrderSend.choosing_chats)
     all_chats = sorted(await chat_service.filter(limit=300), key=lambda x: x.name.lower())
+    messages = []
     for chat_group in list(chunks(all_chats, 100)):
-        await message.answer("Выберите подключенный чат:",
+        m = await message.answer("Выберите подключенный чат:",
                                      reply_markup=await create_chat_choosing(chat_group, message.bot))
+        messages.append(m.message_id)
+    await state.update_data({'messages': messages})
+    await state.set_state(OrderSend.choosing_chats)
 
 
 @router.callback_query(F.data[0] == '1')
 async def choosing_chats(call: CallbackQuery, state: FSMContext):
     await state.set_data({})
-    await state.set_state(OrderSend.choosing_chats)
     all_chats = sorted(await chat_service.filter(limit=300), key=lambda x: x.name.lower())
-    for chat_group in list(chunks(all_chats, 100)):
-        await call.message.edit_text("Выберите подключенный чат:",
-                                     reply_markup=await create_chat_choosing(chat_group, call.bot))
+    messages = []
+    for i, chat_group in enumerate(list(chunks(all_chats, 100))):
+        if i == 0:
+            m = await call.message.edit_text("Выберите подключенный чат:",
+                                         reply_markup=await create_chat_choosing(chat_group, call.bot))
+        else:
+            m = await call.message.answer("Выберите подключенный чат:",
+                                             reply_markup=await create_chat_choosing(chat_group, call.bot))
+        messages.append(m.message_id)
+    await state.update_data({'messages': messages})
+    await state.set_state(OrderSend.choosing_chats)
 
 
 @router.callback_query(OrderSend.choosing_chats, F.data[0] == '0')
 async def active_mail_message(call: CallbackQuery, state: FSMContext):
+    messages = (await state.get_data())['messages']
     await state.update_data({'chat_id': int(call.data.split('|')[1]), 'message_id': call.message.message_id})
-    await state.set_state(OrderSend.write_text)
+    for i in messages:
+        await call.bot.delete_message(call.from_user.id, i)
     await call.message.answer("Теперь отправьте ваше сообщение", reply_markup=back_to_choosing())
+    await state.set_state(OrderSend.write_text)
 
 
 @router.message(OrderSend.write_text)

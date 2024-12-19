@@ -7,6 +7,7 @@ from handlers import admin
 from middlewares.permission_middleware import PermissionMiddleware
 from services.admin_service import admin_service
 from middlewares.log_middleware import LogMiddleware
+from middlewares.album_middleware import AlbumMiddleware
 
 
 async def set_commands(bot: Bot):
@@ -31,6 +32,7 @@ async def main():
     dp = Dispatcher()
     dp.callback_query.outer_middleware(LogMiddleware())
     dp.message.outer_middleware(LogMiddleware())
+    dp.message.outer_middleware(AlbumMiddleware())
     admin.router.message.middleware(PermissionMiddleware())
 
     dp.include_routers(admin.router)
