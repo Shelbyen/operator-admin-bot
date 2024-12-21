@@ -6,7 +6,7 @@ from src.config.project_config import settings
 
 
 async def on_startup():
-    print('Бот вышел в онлайн')
+    print('Оператор вышел в онлайн')
 
 
 class OperatorBot:

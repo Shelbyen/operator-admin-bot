@@ -9,6 +9,7 @@ from aiogram.types import Message, CallbackQuery, InputMediaPhoto, InputMediaDoc
 from aiogram.utils.deep_linking import create_deep_link
 
 from ..filters.chat_type import ChatTypeFilter
+from ..filters.is_admin_bot import BotFilter
 from ..keyboards.admin_kb import create_chat_choosing, create_admin_choosing, create_menu, back_button
 from ..services.admin_service import admin_service
 from ..services.chat_service import chat_service
@@ -18,6 +19,8 @@ from src.services.operator_helper.bot import operator_bot
 
 router = Router()
 router.message.filter(ChatTypeFilter())
+router.message.filter(BotFilter())
+router.callback_query.filter(BotFilter())
 
 
 class SendMessageToAll(StatesGroup):

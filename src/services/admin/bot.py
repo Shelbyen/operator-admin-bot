@@ -6,7 +6,7 @@ from .services.admin_service import admin_service
 from src.config.project_config import settings
 
 
-async def set_commands(bot: Bot):
+async def set_commands(bot):
     await bot.delete_my_commands()
 
 
@@ -17,10 +17,10 @@ async def check_admin_list():
             await admin_service.fast_create(ad)
 
 
-async def on_startup(bot: Bot):
+async def on_startup(bot):
     await check_admin_list()
     await set_commands(bot)
-    print('Бот вышел в онлайн')
+    print('Админ вышел в онлайн')
 
 
 class AdminBot:
