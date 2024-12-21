@@ -1,8 +1,8 @@
 from aiogram import Bot, Dispatcher
 
-from handlers import admin
-from middlewares.permission_middleware import PermissionMiddleware
-from services.admin_service import admin_service
+from .handlers import admin
+from .middlewares.permission_middleware import PermissionMiddleware
+from .services.admin_service import admin_service
 from src.config.project_config import settings
 
 

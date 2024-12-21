@@ -1,7 +1,7 @@
 from aiogram import Bot, Dispatcher
 
-from handlers import operator, user_register, group_register
-from middlewares.permission_middleware import PermissionMiddleware
+from .handlers import operator, user_register, group_register
+from .middlewares.permission_middleware import PermissionMiddleware
 from src.config.project_config import settings
 
 
