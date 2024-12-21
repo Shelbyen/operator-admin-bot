@@ -1,5 +1,5 @@
 import asyncio
-from typing import Callable, Awaitable, Any, Union
+from typing import Callable, Awaitable, Any, Union, Dict
 
 from aiogram import BaseMiddleware
 from aiogram.types import Message
@@ -13,9 +13,9 @@ class AlbumMiddleware(BaseMiddleware):
 
     async def __call__(
             self,
-            handler: Callable[[Message, dict[str, Any]], Awaitable[Any]],
+            handler: Callable[[Message, Dict[str, Any]], Awaitable[Any]],
             message: Message,
-            data: dict[str, Any]
+            data: Dict[str, Any]
     ) -> Any:
         if not message.media_group_id:
             await handler(message, data)

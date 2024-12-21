@@ -1,6 +1,6 @@
 from .base_service import BaseService
-from repositories.chat_repository import chat_repository
-from repositories.sqlalchemy_repository import ModelType
+from ..repositories.chat_repository import chat_repository
+from ..repositories.sqlalchemy_repository import ModelType
 
 
 class ChatService(BaseService):

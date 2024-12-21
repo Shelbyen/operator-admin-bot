@@ -1,10 +1,10 @@
 from datetime import datetime, timedelta
 from random import randint
 
-from repositories.sqlalchemy_repository import ModelType
+from ..repositories.sqlalchemy_repository import ModelType
 from .base_service import BaseService
-from repositories.admin_repository import admin_repository
-from schemas.admin_schema import AdminUpdate, AdminCreate
+from ..repositories.admin_repository import admin_repository
+from ..schemas.admin_schema import AdminUpdate, AdminCreate
 
 
 class AdminService(BaseService):

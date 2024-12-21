@@ -1,9 +1,6 @@
-from math import ceil
-
 from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup, ReplyKeyboardMarkup, KeyboardButton
 
-from services.chat_service import chat_service
-from services.operator_service import operator_service
+from ..services.operator_service import operator_service
 
 
 async def create_chat_choosing(all_chats):

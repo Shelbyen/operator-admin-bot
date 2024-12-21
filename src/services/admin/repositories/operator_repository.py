@@ -1,11 +1,11 @@
 from sqlalchemy import select
 from sqlalchemy.orm import load_only
 
-from models.operator_model import OperatorModel
+from ..models.operator_model import OperatorModel
 from .sqlalchemy_repository import SqlAlchemyRepository, ModelType
-from config.database.db_helper import db_helper
+from src.config.database.db_helper import db_helper
 
-from schemas.operator_schema import OperatorCreate, OperatorUpdate
+from ..schemas.operator_schema import OperatorCreate, OperatorUpdate
 
 
 class OperatorRepository(SqlAlchemyRepository[OperatorModel, OperatorCreate, OperatorUpdate]):

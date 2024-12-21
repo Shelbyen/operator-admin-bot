@@ -8,11 +8,13 @@ from aiogram.types import Message, CallbackQuery, InputMediaPhoto, InputMediaDoc
     InputMediaAnimation
 from aiogram.utils.deep_linking import create_deep_link
 
-from filters.chat_type import ChatTypeFilter
-from keyboards.admin_kb import create_chat_choosing, create_admin_choosing, create_menu, back_button
-from services.admin_service import admin_service
-from services.chat_service import chat_service
-from services.operator_service import operator_service
+from ..filters.chat_type import ChatTypeFilter
+from ..keyboards.admin_kb import create_chat_choosing, create_admin_choosing, create_menu, back_button
+from ..services.admin_service import admin_service
+from ..services.chat_service import chat_service
+from ..services.operator_service import operator_service
+
+from src.services.operator_helper.bot import operator_bot
 
 router = Router()
 router.message.filter(ChatTypeFilter())
@@ -93,15 +95,18 @@ async def send_all_command(message: Message, state: FSMContext):
 async def choosing_chats(message: Message, state: FSMContext, album: Optional[List[Message]] = None):
     message_id = (await state.get_data())['message_id']
     chats = await chat_service.filter(limit=500)
+    send = {}
     if album:
         media_group = []
         for msg in album:
             if msg.photo:
                 file_id = msg.photo[-1].file_id
                 media_group.append(InputMediaPhoto(media=file_id, caption=msg.caption))
+                send.setdefault('photo', []).append((file_id, msg.caption))
             else:
                 obj_dict = msg.dict()
                 file_id = obj_dict[msg.content_type]['file_id']
+                send.setdefault(msg.content_type, []).append((file_id, msg.caption))
                 if msg.document:
                     media_group.append(InputMediaDocument(media=file_id, caption=msg.caption))
                 elif msg.video:
@@ -112,10 +117,10 @@ async def choosing_chats(message: Message, state: FSMContext, album: Optional[Li
                     media_group.append(InputMediaAnimation(media=file_id, caption=msg.caption))
         # await state.set_data({'message': media_group, 'sent': []})
         for i in chats:
-            await message.bot.send_media_group(i.id, media_group)
+            await operator_bot.bot.send_media_group(i.id, media_group)
     else:
         for i in chats:
-            await message.copy_to(i.id)
+            await operator_bot.bot.send_message(i.id, message.text)
     await message.answer('Сообщение успешно отправлено!')
     await state.clear()
     await message.bot.delete_message(chat_id=message.from_user.id, message_id=message_id)
@@ -125,4 +130,3 @@ async def choosing_chats(message: Message, state: FSMContext, album: Optional[Li
 async def back_to_menu(call: CallbackQuery, state: FSMContext):
     await state.clear()
     await call.message.delete()
-    await start_bot(call)

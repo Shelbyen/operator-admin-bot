@@ -1,6 +1,6 @@
 from .base_service import BaseService
-from repositories.operator_repository import operator_repository
-from repositories.sqlalchemy_repository import ModelType
+from ..repositories.operator_repository import operator_repository
+from ..repositories.sqlalchemy_repository import ModelType
 
 
 class OperatorService(BaseService):

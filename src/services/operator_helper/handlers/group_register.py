@@ -2,10 +2,10 @@ from aiogram import Router, Bot
 from aiogram.filters import ChatMemberUpdatedFilter, JOIN_TRANSITION, LEAVE_TRANSITION
 from aiogram.types import ChatMemberUpdated
 
-from filters.chat_type import ChatTypeFilter
-from schemas.chat_schema import ChatCreate
-from services.admin_service import admin_service
-from services.chat_service import chat_service
+from ..filters.chat_type import ChatTypeFilter
+from ..schemas.chat_schema import ChatCreate
+from ..services.admin_service import admin_service
+from ..services.chat_service import chat_service
 
 router = Router()
 router.message.filter(ChatTypeFilter(is_group=True))

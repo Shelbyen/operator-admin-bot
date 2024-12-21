@@ -7,9 +7,9 @@ from aiogram.fsm.state import StatesGroup, State
 from aiogram.types import CallbackQuery, Message, InputMediaPhoto, InputMediaDocument, InputMediaVideo, InputMediaAudio, \
     InputMediaAnimation
 
-from keyboards.operator_kb import *
-from filters.chat_type import ChatTypeFilter
-from services.chat_service import chat_service
+from ..keyboards.operator_kb import *
+from ..filters.chat_type import ChatTypeFilter
+from ..services.chat_service import chat_service
 
 router = Router()
 router.message.filter(ChatTypeFilter())

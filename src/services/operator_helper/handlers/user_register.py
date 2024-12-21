@@ -5,10 +5,10 @@ from aiogram.types import Message
 from aiogram.utils.payload import decode_payload
 
 from .operator import menu
-from filters.chat_type import ChatTypeFilter
-from services.admin_service import admin_service
-from schemas.operator_schema import OperatorCreate
-from services.operator_service import operator_service
+from ..filters.chat_type import ChatTypeFilter
+from ..services.admin_service import admin_service
+from ..schemas.operator_schema import OperatorCreate
+from ..services.operator_service import operator_service
 
 router = Router()
 router.message.filter(ChatTypeFilter())

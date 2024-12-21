@@ -3,9 +3,8 @@ from datetime import datetime, timedelta, timezone
 from aiogram import Bot
 from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup, ReplyKeyboardMarkup, KeyboardButton
 
-from services.chat_service import chat_service
-from schemas.chat_schema import ChatUpdate
-
+from ..services.chat_service import chat_service
+from ..schemas.chat_schema import ChatUpdate
 
 async def create_chat_choosing(all_chats, bot: Bot):
     if all_chats is None:

@@ -1,13 +1,9 @@
-import asyncio
-
 from aiogram import Bot, Dispatcher
 
-from config.project_config import settings
 from handlers import admin
 from middlewares.permission_middleware import PermissionMiddleware
 from services.admin_service import admin_service
-from middlewares.log_middleware import LogMiddleware
-from middlewares.album_middleware import AlbumMiddleware
+from src.config.project_config import settings
 
 
 async def set_commands(bot: Bot):
@@ -27,21 +23,21 @@ async def on_startup(bot: Bot):
     print('Бот вышел в онлайн')
 
 
-async def main():
-    bot = Bot(token=settings.TOKEN)
-    dp = Dispatcher()
-    dp.callback_query.outer_middleware(LogMiddleware())
-    dp.message.outer_middleware(LogMiddleware())
-    dp.message.outer_middleware(AlbumMiddleware())
-    admin.router.message.middleware(PermissionMiddleware())
+class AdminBot:
+    def __init__(self):
+        self.bot = Bot(token=settings.ADMIN_TOKEN)
 
-    dp.include_routers(admin.router)
+    def register_dispatcher(self, dp: Dispatcher):
+        admin.router.message.middleware(PermissionMiddleware())
 
-    dp.startup.register(on_startup)
+        dp.include_routers(admin.router)
 
-    await bot.delete_webhook(drop_pending_updates=True)
-    await dp.start_polling(bot)
+        dp.startup.register(on_startup)
+
+    async def start_bot(self, dp: Dispatcher):
+        self.register_dispatcher(dp)
+        await check_admin_list()
+        await self.bot.delete_webhook(drop_pending_updates=True)
 
 
-if __name__ == "__main__":
-    asyncio.run(main())
+admin_bot = AdminBot()

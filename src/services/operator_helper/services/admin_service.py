@@ -1,7 +1,5 @@
-from datetime import datetime
-
 from .base_service import BaseService
-from repositories.admin_repository import admin_repository
+from ..repositories.admin_repository import admin_repository
 
 
 class AdminService(BaseService):

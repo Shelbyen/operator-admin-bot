@@ -6,7 +6,8 @@ load_dotenv()
 
 
 class Settings(BaseSettings):
-    TOKEN: str
+    ADMIN_TOKEN: str
+    OPERATOR_TOKEN: str
     ADMINS: str
 
 

@@ -1,36 +1,29 @@
-import asyncio
-
 from aiogram import Bot, Dispatcher
 
-from config.project_config import settings
 from handlers import operator, user_register, group_register
-from middlewares.album_middleware import AlbumMiddleware
 from middlewares.permission_middleware import PermissionMiddleware
-from middlewares.log_middleware import LogMiddleware
+from src.config.project_config import settings
 
 
 async def on_startup():
     print('Бот вышел в онлайн')
 
 
-async def main():
-    bot = Bot(token=settings.TOKEN)
-    dp = Dispatcher()
+class OperatorBot:
+    def __init__(self):
+        self.bot = Bot(token=settings.OPERATOR_TOKEN)
 
-    dp.message.outer_middleware(AlbumMiddleware())
-    dp.callback_query.outer_middleware(LogMiddleware())
-    dp.message.outer_middleware(LogMiddleware())
-    user_register.router.message.middleware(PermissionMiddleware(is_operator=False))
-    operator.router.message.middleware(PermissionMiddleware())
-    group_register.router.message.middleware(PermissionMiddleware())
+    def register_dispatcher(self, dp: Dispatcher):
+        user_register.router.message.middleware(PermissionMiddleware(is_operator=False))
+        operator.router.message.middleware(PermissionMiddleware())
+        group_register.router.message.middleware(PermissionMiddleware())
 
-    dp.include_routers(user_register.router, operator.router, group_register.router)
+        dp.include_routers(user_register.router, operator.router, group_register.router)
 
-    dp.startup.register(on_startup)
+        dp.startup.register(on_startup)
 
-    await bot.delete_webhook(drop_pending_updates=True)
-    await dp.start_polling(bot)
+    async def start_bot(self, dp: Dispatcher):
+        self.register_dispatcher(dp)
+        await self.bot.delete_webhook(drop_pending_updates=True)
 
-
-if __name__ == "__main__":
-    asyncio.run(main())
+operator_bot = OperatorBot()

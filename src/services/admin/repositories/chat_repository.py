@@ -1,11 +1,11 @@
 from sqlalchemy import select
 from sqlalchemy.orm import load_only
 
-from models.chat_model import ChatModel
+from ..models.chat_model import ChatModel
 from .sqlalchemy_repository import SqlAlchemyRepository, ModelType
-from config.database.db_helper import db_helper
+from src.config.database.db_helper import db_helper
 
-from schemas.chat_schema import ChatCreate, ChatUpdate
+from ..schemas.chat_schema import ChatCreate, ChatUpdate
 
 
 class ChatRepository(SqlAlchemyRepository[ChatModel, ChatCreate, ChatUpdate]):

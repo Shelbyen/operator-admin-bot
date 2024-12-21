@@ -2,7 +2,7 @@ from typing import Callable, Dict, Any, Awaitable
 
 from aiogram.types import TelegramObject, Message, CallbackQuery
 
-from services.operator_service import operator_service
+from ..services.operator_service import operator_service
 
 
 class PermissionMiddleware:
