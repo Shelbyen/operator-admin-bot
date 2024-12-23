@@ -1,6 +1,7 @@
 from typing import Optional, List
 
 from aiogram import Router, F
+from aiogram.exceptions import TelegramMigrateToChat
 from aiogram.filters import Command
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import StatesGroup, State
@@ -11,6 +12,7 @@ from aiogram.utils.deep_linking import create_deep_link
 from ..filters.chat_type import ChatTypeFilter
 from ..filters.is_admin_bot import BotFilter
 from ..keyboards.admin_kb import create_chat_choosing, create_admin_choosing, create_menu, back_button
+from ..schemas.chat_schema import ChatBase, ChatCreate
 from ..services.admin_service import admin_service
 from ..services.chat_service import chat_service
 from ..services.operator_service import operator_service
@@ -29,6 +31,27 @@ class SendMessageToAll(StatesGroup):
 def chunks(lst, chunk_size):
     for i in range(0, len(lst), chunk_size):
         yield lst[i:i + chunk_size]
+
+
+async def except_when_send(send_function):
+    async def wrapper(chat: ChatBase, *args, **kwargs):
+        try:
+            await send_function(chat, *args, **kwargs)
+        except TelegramMigrateToChat as e:
+            await chat_service.delete(chat.id)
+            await chat_service.create(ChatCreate(id=e.migrate_to_chat_id, name=chat.name))
+            chat.id = e.migrate_to_chat_id
+            await send_function(chat, *args, **kwargs)
+    return wrapper
+
+@except_when_send
+async def fix_send_media_group(chat: ChatBase, media_group):
+    await operator_bot.bot.send_media_group(chat.id, media_group)
+
+
+@except_when_send
+async def fix_send_message(chat: ChatBase, message):
+    await operator_bot.bot.send_message(chat.id, message)
 
 
 start_message = "**Добавить чаты** - по нажатию на кнопку бот дает ссылку на добавления чатов, при нажатии на нее автоматически откроется меню TG с выбором чатов. После выбора чата необходимо просто нажат на кнопку 'Добавить бота' не добавляю ему каких либо привилегий. После добавления бот должен написать в чат 'Чат успешно добавлен'.\n\n**Удалить чаты** - по нажатию на кнопку выпадет меню со всеми подключенными чатами. При нажатии на чат он автоматически удалится.\n\n**Добавить операторов** - по нажатию выдаст ссылку-приглашение. Срок действия ссылки - 15 минут, после этого необходимо снова создать ссылку.\n\n**Удалить операторов** - по нажатию выпадает меню со всеми операторами. При нажатии удаляет оператора.\n"
@@ -97,7 +120,7 @@ async def send_all_command(message: Message, state: FSMContext):
 @router.message(SendMessageToAll.write_text)
 async def choosing_chats(message: Message, state: FSMContext, album: Optional[List[Message]] = None):
     message_id = (await state.get_data())['message_id']
-    chats = await chat_service.filter(limit=500)
+    chats: List[ChatBase] = await chat_service.filter(limit=500)
     send = {}
     if album:
         media_group = []
@@ -120,10 +143,13 @@ async def choosing_chats(message: Message, state: FSMContext, album: Optional[Li
                     media_group.append(InputMediaAnimation(media=file_id, caption=msg.caption))
         # await state.set_data({'message': media_group, 'sent': []})
         for i in chats:
-            await operator_bot.bot.send_media_group(i.id, media_group)
+            await fix_send_media_group(i, media_group)
+
     else:
         for i in chats:
-            await operator_bot.bot.send_message(i.id, message.text)
+            await fix_send_message(i, message.text)
+
+
     await message.answer('Сообщение успешно отправлено!')
     await state.clear()
     await message.bot.delete_message(chat_id=message.from_user.id, message_id=message_id)

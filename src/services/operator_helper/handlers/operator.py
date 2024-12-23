@@ -5,7 +5,7 @@ from aiogram.filters import Command, StateFilter
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import StatesGroup, State
 from aiogram.types import CallbackQuery, Message, InputMediaPhoto, InputMediaDocument, InputMediaVideo, InputMediaAudio, \
-    InputMediaAnimation
+    InputMediaAnimation, ReplyKeyboardRemove
 
 from ..keyboards.operator_kb import *
 from ..filters.chat_type import ChatTypeFilter
@@ -37,7 +37,7 @@ async def cancel(call: CallbackQuery, state: FSMContext):
 @router.message(Command('start'))
 async def menu(message: Message, state: FSMContext):
     await state.clear()
-    # await message.answer(start_message, reply_markup=ReplyKeyboardRemove())
+    await message.answer(start_message, reply_markup=ReplyKeyboardRemove())
     await activate_sender(message, state)
 
 
@@ -73,7 +73,7 @@ async def choosing_chats(call: CallbackQuery, state: FSMContext):
 @router.callback_query(OrderSend.choosing_chats, F.data[0] == '0')
 async def active_mail_message(call: CallbackQuery, state: FSMContext):
     messages = (await state.get_data())['messages']
-    await state.update_data({'chat_id': int(call.data.split('|')[1]), 'message_id': call.message.message_id})
+    await state.update_data({'chat_id': int(call.data.split('|')[1])})
     for i in messages:
         await call.bot.delete_message(call.from_user.id, i)
     await call.message.answer("Теперь отправьте ваше сообщение", reply_markup=back_to_choosing())
@@ -84,7 +84,6 @@ async def active_mail_message(call: CallbackQuery, state: FSMContext):
 async def choosing_chats(message: Message, state: FSMContext, album: Optional[List[Message]] = None):
     # await state.set_state(OrderSend.choosing_chats)
     chat_id = (await state.get_data())["chat_id"]
-    message_id = (await state.get_data())['message_id']
     if album:
         media_group = []
         for msg in album:
@@ -108,5 +107,4 @@ async def choosing_chats(message: Message, state: FSMContext, album: Optional[Li
         await message.copy_to(chat_id)
     await message.answer('Сообщение успешно отправлено!')
     await state.clear()
-    await message.bot.delete_message(chat_id=message.from_user.id, message_id=message_id)
     await activate_sender(message, state)
