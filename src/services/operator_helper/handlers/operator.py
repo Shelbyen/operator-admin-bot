@@ -41,7 +41,7 @@ async def menu(message: Message, state: FSMContext):
     await activate_sender(message, state)
 
 
-@router.message(or_f(StateFilter(None), F.text.contains('Отправить сообщение')))
+@router.message(StateFilter(None), F.text.contains('Отправить сообщение'))
 async def activate_sender(message: Message, state: FSMContext):
     all_chats = sorted(await chat_service.filter(limit=300), key=lambda x: x.name.lower())
     messages = []
