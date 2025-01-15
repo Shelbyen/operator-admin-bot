@@ -1,7 +1,7 @@
 from typing import Optional, List
 
 from aiogram import Router, F
-from aiogram.filters import Command, StateFilter, or_f
+from aiogram.filters import Command, StateFilter, or_f, and_f
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import StatesGroup, State
 from aiogram.types import CallbackQuery, Message, InputMediaPhoto, InputMediaDocument, InputMediaVideo, InputMediaAudio, \
@@ -41,7 +41,7 @@ async def menu(message: Message, state: FSMContext):
     await activate_sender(message, state)
 
 
-@router.message(StateFilter(None), F.text.contains('Отправить сообщение'))
+@router.message(or_f(StateFilter(None), and_f(F.text.contains('Отправить сообщение'), OrderSend.choosing_chats)))
 async def activate_sender(message: Message, state: FSMContext):
     all_chats = sorted(await chat_service.filter(limit=300), key=lambda x: x.name.lower())
     messages = []
