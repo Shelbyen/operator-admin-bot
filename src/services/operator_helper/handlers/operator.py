@@ -34,14 +34,14 @@ async def cancel(call: CallbackQuery, state: FSMContext):
     await state.clear()
 
 
-@router.message(or_f(Command('start'), F.text.contains('Отправить сообщение')))
+@router.message(Command('start'))
 async def menu(message: Message, state: FSMContext):
     await state.clear()
     await message.answer(start_message, reply_markup=create_menu())
     await activate_sender(message, state)
 
 
-@router.message(StateFilter(None))
+@router.message(or_f(StateFilter(None), F.text.contains('Отправить сообщение')))
 async def activate_sender(message: Message, state: FSMContext):
     all_chats = sorted(await chat_service.filter(limit=300), key=lambda x: x.name.lower())
     messages = []
