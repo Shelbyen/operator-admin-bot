@@ -76,7 +76,7 @@ async def active_mail_message(call: CallbackQuery, state: FSMContext):
     await state.update_data({'chat_id': int(call.data.split('|')[1])})
     for i in messages:
         await call.bot.delete_message(call.from_user.id, i)
-    await call.message.answer("Теперь отправьте ваше сообщение", reply_markup=back_to_choosing())
+    await call.message.answer(f"Выбранный чат:{call.data.split('|')[2]}\nТеперь отправьте ваше сообщение", reply_markup=back_to_choosing())
     await state.set_state(OrderSend.write_text)
 
 

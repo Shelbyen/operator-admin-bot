@@ -33,7 +33,7 @@ def chunks(lst, chunk_size):
         yield lst[i:i + chunk_size]
 
 
-async def except_when_send(send_function):
+def except_when_send(send_function):
     async def wrapper(chat: ChatBase, *args, **kwargs):
         try:
             await send_function(chat, *args, **kwargs)
@@ -118,7 +118,7 @@ async def send_all_command(message: Message, state: FSMContext):
 
 
 @router.message(SendMessageToAll.write_text)
-async def choosing_chats(message: Message, state: FSMContext, album: Optional[List[Message]] = None):
+async def mass_mailing(message: Message, state: FSMContext, album: Optional[List[Message]] = None):
     message_id = (await state.get_data())['message_id']
     chats: List[ChatBase] = await chat_service.filter(limit=500)
     send = {}
