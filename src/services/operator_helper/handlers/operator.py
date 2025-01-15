@@ -66,20 +66,19 @@ async def choosing_chats(call: CallbackQuery, state: FSMContext):
             m = await call.message.answer("Выберите подключенный чат:",
                                              reply_markup=await create_chat_choosing(chat_group, call.bot))
         messages.append(m.message_id)
-    id_name_table = dict((i.id, i.name )for i in all_chats)
-    await state.update_data({'messages': messages, 'id_name_table': id_name_table})
+    await state.update_data({'messages': messages})
     await state.set_state(OrderSend.choosing_chats)
 
 
 @router.callback_query(OrderSend.choosing_chats, F.data[0] == '0')
 async def active_mail_message(call: CallbackQuery, state: FSMContext):
+    chat = await chat_service.get(call.data.split('|')[1])
     state_data = await state.get_data()
     messages = state_data['messages']
-    id_name_table = state_data['id_name_table']
     await state.update_data({'chat_id': int(call.data.split('|')[1])})
     for i in messages:
         await call.bot.delete_message(call.from_user.id, i)
-    await call.message.answer(f"Выбранный чат:{id_name_table[call.data.split('|')[1]]}\nТеперь отправьте ваше сообщение", reply_markup=back_to_choosing())
+    await call.message.answer(f"Выбранный чат:{chat.name}\nТеперь отправьте ваше сообщение", reply_markup=back_to_choosing())
     await state.set_state(OrderSend.write_text)
 
 
