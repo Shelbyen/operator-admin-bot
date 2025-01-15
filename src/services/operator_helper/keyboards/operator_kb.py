@@ -20,7 +20,7 @@ async def create_chat_choosing(all_chats, bot: Bot):
             await chat_service.update(pk=i.id, model=ChatUpdate(name=i.name, updated_at=datetime.now()))
         kb.append(
             [InlineKeyboardButton(text=i.name,
-                                  callback_data=f'0|{i.id}|{i.name}')])
+                                  callback_data=f'0|{i.id}|0')])
     return InlineKeyboardMarkup(inline_keyboard=kb)
 
 
