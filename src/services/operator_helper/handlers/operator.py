@@ -34,10 +34,10 @@ async def cancel(call: CallbackQuery, state: FSMContext):
     await state.clear()
 
 
-@router.message(Command('start'))
+@router.message(Command('start') or F.is_('Отправить сообщение'))
 async def menu(message: Message, state: FSMContext):
     await state.clear()
-    await message.answer(start_message, reply_markup=ReplyKeyboardRemove())
+    await message.answer(start_message, reply_markup=create_menu())
     await activate_sender(message, state)
 
 
@@ -78,7 +78,7 @@ async def active_mail_message(call: CallbackQuery, state: FSMContext):
     await state.update_data({'chat_id': int(call.data.split('|')[1])})
     for i in messages:
         await call.bot.delete_message(call.from_user.id, i)
-    await call.message.answer(f"Выбранный чат:{chat.name}\nТеперь отправьте ваше сообщение", reply_markup=back_to_choosing())
+    await call.message.answer(f"Выбранный чат: {chat.name}\nТеперь отправьте ваше сообщение", reply_markup=back_to_choosing())
     await state.set_state(OrderSend.write_text)
 
 
