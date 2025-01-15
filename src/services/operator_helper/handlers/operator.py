@@ -1,7 +1,7 @@
 from typing import Optional, List
 
 from aiogram import Router, F
-from aiogram.filters import Command, StateFilter
+from aiogram.filters import Command, StateFilter, or_f
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import StatesGroup, State
 from aiogram.types import CallbackQuery, Message, InputMediaPhoto, InputMediaDocument, InputMediaVideo, InputMediaAudio, \
@@ -34,7 +34,7 @@ async def cancel(call: CallbackQuery, state: FSMContext):
     await state.clear()
 
 
-@router.message(Command('start') or F.is_('Отправить сообщение'))
+@router.message(or_f(Command('start'), F.text.contains('Отправить сообщение')))
 async def menu(message: Message, state: FSMContext):
     await state.clear()
     await message.answer(start_message, reply_markup=create_menu())
