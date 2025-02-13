@@ -113,9 +113,9 @@ async def choosing_chats(message: Message, state: FSMContext, album: Optional[Li
         await message.copy_to(chat_id)
     numbers = [match.number.national_number for match in PhoneNumberMatcher(message.text, 'GB')]
     print(numbers)
-    message_service.create_many(
-        [MessageCreate(id=str(message.message_id), chat_id=str(chat_id), phone=str(number), message=message.text) for number in
-         numbers])
+    await message_service.create_many(
+        [MessageCreate(id=str(message.message_id), chat_id=str(chat_id), phone=str(number), message=message.text) for
+         number in numbers])
 
     await message.answer('Сообщение успешно отправлено!')
     await state.clear()
