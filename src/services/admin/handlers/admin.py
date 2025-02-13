@@ -182,7 +182,7 @@ async def delete_message(message: Message, state: FSMContext):
 
     messages: MessageBase = await message_service.get_by_phone(phone=target_number)
     await operator_bot.bot.delete_message(messages.chat_id, messages.id)
-    await message_service.delete(id=messages.id)
+    await message_service.delete(pk=messages.id)
 
     await message.answer('Сообщение успешно удалено!', reply_markup=create_menu())
     await state.clear()
