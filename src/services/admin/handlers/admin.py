@@ -174,7 +174,10 @@ async def delete_message_command(message: Message, state: FSMContext):
 @router.message(MessageDeleting.write_number)
 async def delete_message(message: Message, state: FSMContext):
     message_id = (await state.get_data())['message_id']
-    numbers = [match.number.national_number for match in PhoneNumberMatcher(message.text, 'GB')]
+    message_text = message.text.replace(' 8', ' +7')
+    if message_text[0] == '8':
+        message_text = '+7' + message_text[1:]
+    numbers = [match.number.national_number for match in PhoneNumberMatcher(message_text, 'GB')]
     if len(numbers) == 0:
         await message.answer('Введите телефон правильно!')
         return

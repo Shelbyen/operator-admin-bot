@@ -111,8 +111,12 @@ async def choosing_chats(message: Message, state: FSMContext, album: Optional[Li
         send_message = (await message.bot.send_media_group(chat_id, media_group))[0]
     else:
         send_message = await message.copy_to(chat_id)
-    numbers = [match.number.national_number for match in PhoneNumberMatcher(message.text, 'GB')]
-    print(numbers)
+
+    message_text = message.text.replace(' 8', ' +7')
+    if message_text[0] == '8':
+        message_text = '+7' + message_text[1:]
+
+    numbers = [match.number.national_number for match in PhoneNumberMatcher(message_text, 'GB')]
     await message_service.create_many(
         [MessageCreate(id=str(send_message.message_id), chat_id=str(chat_id), phone=str(number), message=message.text) for
          number in numbers])
