@@ -68,7 +68,7 @@ start_message = "**Добавить чаты** - по нажатию на кно
 
 @router.callback_query(F.data == 'cancel')
 async def cancel(call: CallbackQuery, state: FSMContext):
-    await call.message.edit_text("Ок")
+    await call.message.edit_text("Ок", reply_markup=create_menu())
     await state.clear()
 
 
@@ -87,7 +87,7 @@ async def add_chat(message: Message):
 async def get_ref(message: Message):
     admin = await admin_service.get_with_update(str(message.from_user.id))
     link = create_deep_link('helper_operator_bot', 'start', str(admin.invite_hash), encode=True)
-    await message.answer(f"Ссылка для приглашения оператора: {link}")
+    await message.answer(f"Ссылка для приглашения оператора: {link}", reply_markup=create_menu())
 
 
 @router.message(F.text.lower() == "удалить чаты")
@@ -159,7 +159,7 @@ async def mass_mailing(message: Message, state: FSMContext, album: Optional[List
             await fix_send_message(i, message.text)
 
 
-    await message.answer('Сообщение успешно отправлено!')
+    await message.answer('Сообщение успешно отправлено!', reply_markup=create_menu())
     await state.clear()
     await message.bot.delete_message(chat_id=message.from_user.id, message_id=message_id)
 
@@ -184,7 +184,7 @@ async def delete_message(message: Message, state: FSMContext):
     await operator_bot.bot.delete_message(messages.chat_id, messages.id)
     await message_service.delete(id=messages.id)
 
-    await message.answer('Сообщение успешно удалено!')
+    await message.answer('Сообщение успешно удалено!', reply_markup=create_menu())
     await state.clear()
     await message.bot.delete_message(chat_id=message.from_user.id, message_id=message_id)
 

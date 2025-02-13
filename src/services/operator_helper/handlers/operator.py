@@ -111,13 +111,11 @@ async def choosing_chats(message: Message, state: FSMContext, album: Optional[Li
         await message.bot.send_media_group(chat_id, media_group)
     else:
         await message.copy_to(chat_id)
-    try:
-        numbers = [match.number.national_number for match in PhoneNumberMatcher(message.text, 'GB')]
-        message_service.create_many(
-            [MessageCreate(id=message.message_id, chat_id=chat_id, phone=number, message=message.text) for number in
-             numbers])
-    except:
-        pass
+    numbers = [match.number.national_number for match in PhoneNumberMatcher(message.text, 'GB')]
+    print(numbers)
+    message_service.create_many(
+        [MessageCreate(id=message.message_id, chat_id=chat_id, phone=number, message=message.text) for number in
+         numbers])
 
     await message.answer('Сообщение успешно отправлено!')
     await state.clear()
