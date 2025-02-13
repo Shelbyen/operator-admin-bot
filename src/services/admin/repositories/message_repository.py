@@ -1,7 +1,7 @@
 from sqlalchemy import select
 
 from src.config.database.db_helper import db_helper
-from .sqlalchemy_repository import SqlAlchemyRepository
+from .sqlalchemy_repository import SqlAlchemyRepository, ModelType
 from ..models.message_model import MessageModel
 from ..schemas.message_schema import MessageCreate, MessageUpdate
 
