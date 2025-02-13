@@ -38,6 +38,9 @@ def create_menu():
             KeyboardButton(text="Удалить операторов")
         ],
         [
+            KeyboardButton(text='Удалить сообщение')
+        ],
+        [
             KeyboardButton(text="Отправить во все чаты")
         ]
 

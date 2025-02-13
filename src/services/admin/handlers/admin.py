@@ -8,13 +8,16 @@ from aiogram.fsm.state import StatesGroup, State
 from aiogram.types import Message, CallbackQuery, InputMediaPhoto, InputMediaDocument, InputMediaVideo, InputMediaAudio, \
     InputMediaAnimation
 from aiogram.utils.deep_linking import create_deep_link
+from phonenumbers import PhoneNumberMatcher
 
 from ..filters.chat_type import ChatTypeFilter
 from ..filters.is_admin_bot import BotFilter
 from ..keyboards.admin_kb import create_chat_choosing, create_admin_choosing, create_menu, back_button
 from ..schemas.chat_schema import ChatBase, ChatCreate
+from ..schemas.message_schema import MessageBase
 from ..services.admin_service import admin_service
 from ..services.chat_service import chat_service
+from ..services.message_service import message_service
 from ..services.operator_service import operator_service
 
 from src.services.operator_helper.bot import operator_bot
@@ -27,6 +30,12 @@ router.callback_query.filter(BotFilter())
 
 class SendMessageToAll(StatesGroup):
     write_text = State()
+
+
+class MessageDeleting(StatesGroup):
+    write_number = State()
+    choosing_message = State()
+
 
 def chunks(lst, chunk_size):
     for i in range(0, len(lst), chunk_size):
@@ -130,7 +139,7 @@ async def mass_mailing(message: Message, state: FSMContext, album: Optional[List
                 media_group.append(InputMediaPhoto(media=file_id, caption=msg.caption))
                 send.setdefault('photo', []).append((file_id, msg.caption))
             else:
-                obj_dict = msg.dict()
+                obj_dict = msg.model_dump()
                 file_id = obj_dict[msg.content_type]['file_id']
                 send.setdefault(msg.content_type, []).append((file_id, msg.caption))
                 if msg.document:
@@ -151,6 +160,30 @@ async def mass_mailing(message: Message, state: FSMContext, album: Optional[List
 
 
     await message.answer('Сообщение успешно отправлено!')
+    await state.clear()
+    await message.bot.delete_message(chat_id=message.from_user.id, message_id=message_id)
+
+
+@router.message(F.text.lower() == 'удалить сообщение')
+async def delete_message_command(message: Message, state: FSMContext):
+    await state.set_state(MessageDeleting.write_number)
+    message = await message.answer(f"Отправьте номер телефона", reply_markup=back_button())
+    await state.update_data({'message_id': message.message_id})
+
+
+@router.message(MessageDeleting.write_number)
+async def delete_message(message: Message, state: FSMContext):
+    message_id = (await state.get_data())['message_id']
+    numbers = [match.number.national_number for match in PhoneNumberMatcher(message.text, 'GB')]
+    if len(numbers) == 0:
+        await message.answer('Введите телефон правильно!')
+        return
+    target_number = numbers[0]
+
+    messages: MessageBase = message_service.get_by_phone(phone=target_number)
+    await operator_bot.bot.delete_message(messages.chat_id, messages.id)
+
+    await message.answer('Сообщение успешно удалено!')
     await state.clear()
     await message.bot.delete_message(chat_id=message.from_user.id, message_id=message_id)
 

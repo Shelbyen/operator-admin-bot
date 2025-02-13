@@ -5,11 +5,14 @@ from aiogram.filters import Command, StateFilter, or_f, and_f
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import StatesGroup, State
 from aiogram.types import CallbackQuery, Message, InputMediaPhoto, InputMediaDocument, InputMediaVideo, InputMediaAudio, \
-    InputMediaAnimation, ReplyKeyboardRemove
+    InputMediaAnimation
+from phonenumbers import PhoneNumberMatcher
 
-from ..keyboards.operator_kb import *
 from ..filters.chat_type import ChatTypeFilter
+from ..keyboards.operator_kb import *
+from ..schemas.message_schema import MessageCreate
 from ..services.chat_service import chat_service
+from ..services.message_service import message_service
 
 router = Router()
 router.message.filter(ChatTypeFilter())
@@ -41,13 +44,13 @@ async def menu(message: Message, state: FSMContext):
     await activate_sender(message, state)
 
 
-@router.message(or_f(StateFilter(None), and_f(F.text.contains('Отправить сообщение'), OrderSend.choosing_chats)))
+@router.message(or_f(StateFilter(None), and_f(F.text.contains('Отправить сообщение'), OrderSend.write_text)))
 async def activate_sender(message: Message, state: FSMContext):
     all_chats = sorted(await chat_service.filter(limit=300), key=lambda x: x.name.lower())
     messages = []
     for chat_group in list(chunks(all_chats, 100)):
         m = await message.answer("Выберите подключенный чат:",
-                                     reply_markup=await create_chat_choosing(chat_group, message.bot))
+                                 reply_markup=await create_chat_choosing(chat_group, message.bot))
         messages.append(m.message_id)
     await state.update_data({'messages': messages})
     await state.set_state(OrderSend.choosing_chats)
@@ -61,10 +64,10 @@ async def choosing_chats(call: CallbackQuery, state: FSMContext):
     for i, chat_group in enumerate(list(chunks(all_chats, 100))):
         if i == 0:
             m = await call.message.edit_text("Выберите подключенный чат:",
-                                         reply_markup=await create_chat_choosing(chat_group, call.bot))
+                                             reply_markup=await create_chat_choosing(chat_group, call.bot))
         else:
             m = await call.message.answer("Выберите подключенный чат:",
-                                             reply_markup=await create_chat_choosing(chat_group, call.bot))
+                                          reply_markup=await create_chat_choosing(chat_group, call.bot))
         messages.append(m.message_id)
     await state.update_data({'messages': messages})
     await state.set_state(OrderSend.choosing_chats)
@@ -78,7 +81,8 @@ async def active_mail_message(call: CallbackQuery, state: FSMContext):
     await state.update_data({'chat_id': int(call.data.split('|')[1])})
     for i in messages:
         await call.bot.delete_message(call.from_user.id, i)
-    await call.message.answer(f"Выбранный чат: {chat.name}\nТеперь отправьте ваше сообщение", reply_markup=back_to_choosing())
+    await call.message.answer(f"Выбранный чат: {chat.name}\nТеперь отправьте ваше сообщение",
+                              reply_markup=back_to_choosing())
     await state.set_state(OrderSend.write_text)
 
 
@@ -93,7 +97,7 @@ async def choosing_chats(message: Message, state: FSMContext, album: Optional[Li
                 file_id = msg.photo[-1].file_id
                 media_group.append(InputMediaPhoto(media=file_id, caption=msg.caption))
             else:
-                obj_dict = msg.dict()
+                obj_dict = msg.model_dump()
                 file_id = obj_dict[msg.content_type]['file_id']
                 if msg.document:
                     media_group.append(InputMediaDocument(media=file_id, caption=msg.caption))
@@ -107,6 +111,14 @@ async def choosing_chats(message: Message, state: FSMContext, album: Optional[Li
         await message.bot.send_media_group(chat_id, media_group)
     else:
         await message.copy_to(chat_id)
+    try:
+        numbers = [match.number.national_number for match in PhoneNumberMatcher(message.text, 'GB')]
+        message_service.create_many(
+            [MessageCreate(id=message.message_id, chat_id=chat_id, phone=number, message=message.text) for number in
+             numbers])
+    except:
+        pass
+
     await message.answer('Сообщение успешно отправлено!')
     await state.clear()
     await activate_sender(message, state)
