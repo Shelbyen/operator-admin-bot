@@ -2,7 +2,7 @@ import re
 from typing import Optional, List
 
 from aiogram import Router, F
-from aiogram.exceptions import TelegramMigrateToChat, TelegramForbiddenError
+from aiogram.exceptions import TelegramMigrateToChat, TelegramForbiddenError, TelegramBadRequest
 from aiogram.filters import Command
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import StatesGroup, State
@@ -76,6 +76,8 @@ async def update_keyboard(message: Message):
             await message.bot.send_message(admin.id, 'Сообщение для обновления клавиатуры', reply_markup=new_keyboard)
         except TelegramForbiddenError:
             continue
+        except TelegramBadRequest:
+            print('Чат не найден с ', admin.id)
     await message.answer('Клавиатура обновлена!')
 
 
