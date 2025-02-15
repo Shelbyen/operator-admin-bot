@@ -2,7 +2,7 @@ import re
 from typing import Optional, List
 
 from aiogram import Router, F
-from aiogram.exceptions import TelegramMigrateToChat
+from aiogram.exceptions import TelegramMigrateToChat, TelegramForbiddenError
 from aiogram.filters import Command
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import StatesGroup, State
@@ -67,6 +67,18 @@ async def fix_send_message(chat: ChatBase, message):
 start_message = "**Добавить чаты** - по нажатию на кнопку бот дает ссылку на добавления чатов, при нажатии на нее автоматически откроется меню TG с выбором чатов. После выбора чата необходимо просто нажат на кнопку 'Добавить бота' не добавляю ему каких либо привилегий. После добавления бот должен написать в чат 'Чат успешно добавлен'.\n\n**Удалить чаты** - по нажатию на кнопку выпадет меню со всеми подключенными чатами. При нажатии на чат он автоматически удалится.\n\n**Добавить операторов** - по нажатию выдаст ссылку-приглашение. Срок действия ссылки - 15 минут, после этого необходимо снова создать ссылку.\n\n**Удалить операторов** - по нажатию выпадает меню со всеми операторами. При нажатии удаляет оператора.\n"
 
 
+@router.message(Command('update'))
+async def update_keyboard(message: Message):
+    admins = await admin_service.filter()
+    new_keyboard = create_menu()
+    for admin in admins:
+        try:
+            await message.bot.send_message(admin.id, 'Сообщение для обновления клавиатуры', reply_markup=new_keyboard)
+        except TelegramForbiddenError:
+            continue
+    await message.answer('Клавиатура обновлена!')
+
+
 @router.callback_query(F.data == 'cancel')
 async def cancel(call: CallbackQuery, state: FSMContext):
     await call.message.edit_text("Ок", reply_markup=create_menu())
@@ -81,7 +93,7 @@ async def start_bot(message: Message | CallbackQuery):
 @router.message(F.text.lower() == 'добавить чаты')
 async def add_chat(message: Message):
     link = 'https://t.me/helper_operator_bot?startgroup='
-    await message.answer(f'Используйте ссылку ниже чтобы добавить бота в группу: {link}')
+    await message.answer(f'Используйте ссылку ниже чтобы добавить бота в группу: {link}', reply_markup=create_menu())
 
 
 @router.message(F.text.lower() == "добавить операторов")
