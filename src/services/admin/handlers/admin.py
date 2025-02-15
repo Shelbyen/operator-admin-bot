@@ -77,7 +77,7 @@ async def update_keyboard(message: Message):
         except TelegramForbiddenError:
             continue
         except TelegramBadRequest:
-            print('Чат не найден с ', admin.id)
+            print('Чат не найден с', admin.id)
     await message.answer('Клавиатура обновлена!')
 
 
