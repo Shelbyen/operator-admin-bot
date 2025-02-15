@@ -1,3 +1,4 @@
+import re
 from typing import Optional, List
 
 from aiogram import Router, F
@@ -174,25 +175,26 @@ async def delete_message_command(message: Message, state: FSMContext):
 @router.message(MessageDeleting.write_number)
 async def delete_message(message: Message, state: FSMContext):
     message_id = (await state.get_data())['message_id']
-    message_text = message.text.replace(' 8', ' +7')
-    if message_text[0] == '8':
-        message_text = '+7' + message_text[1:]
-    numbers = [match.number.national_number for match in PhoneNumberMatcher(message_text, 'GB')]
+
+    if not message.text:
+        await message.answer('Введите телефон правильно!')
+        return
+
+    numbers = [i[0] for i in re.finditer(r'((\+7|8|7)[\- ]?)[0-9]{10}', message.text)]
     if len(numbers) == 0:
         await message.answer('Введите телефон правильно!')
         return
-    target_number = str(numbers[0])
+    target_number = numbers[0][-10:]
 
     messages: MessageBase = await message_service.get_by_phone(phone=target_number)
     if messages:
         await operator_bot.bot.delete_message(messages.chat_id, messages.id)
         await message_service.delete(pk=messages.id)
+
+        await message.answer('Сообщение успешно удалено!', reply_markup=create_menu())
     else:
         await message.answer('Сообщение не найдено')
-        await state.clear()
-        await message.bot.delete_message(chat_id=message.from_user.id, message_id=message_id)
 
-    await message.answer('Сообщение успешно удалено!', reply_markup=create_menu())
     await state.clear()
     await message.bot.delete_message(chat_id=message.from_user.id, message_id=message_id)
 

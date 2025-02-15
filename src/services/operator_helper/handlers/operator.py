@@ -1,3 +1,4 @@
+import re
 from typing import Optional, List
 
 from aiogram import Router, F
@@ -6,7 +7,6 @@ from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import StatesGroup, State
 from aiogram.types import CallbackQuery, Message, InputMediaPhoto, InputMediaDocument, InputMediaVideo, InputMediaAudio, \
     InputMediaAnimation
-from phonenumbers import PhoneNumberMatcher
 
 from ..filters.chat_type import ChatTypeFilter
 from ..keyboards.operator_kb import *
@@ -112,14 +112,11 @@ async def choosing_chats(message: Message, state: FSMContext, album: Optional[Li
     else:
         send_message = await message.copy_to(chat_id)
 
-    message_text = message.text.replace(' 8', ' +7')
-    if message_text[0] == '8':
-        message_text = '+7' + message_text[1:]
-
-    numbers = [match.number.national_number for match in PhoneNumberMatcher(message_text, 'GB')]
-    await message_service.create_many(
-        [MessageCreate(id=str(send_message.message_id), chat_id=str(chat_id), phone=str(number), message=message.text) for
-         number in numbers])
+    if message.text:
+        numbers = re.finditer(r'((\+7|8|7)[\- ]?)[0-9]{10}', message.text)
+        await message_service.create_many(
+            [MessageCreate(id=str(send_message.message_id), chat_id=str(chat_id), phone=number[0][-10:],
+                           message=message.text) for number in numbers])
 
     await message.answer('Сообщение успешно отправлено!')
     await state.clear()
