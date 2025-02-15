@@ -9,7 +9,7 @@ from aiogram.fsm.state import StatesGroup, State
 from aiogram.types import Message, CallbackQuery, InputMediaPhoto, InputMediaDocument, InputMediaVideo, InputMediaAudio, \
     InputMediaAnimation
 from aiogram.utils.deep_linking import create_deep_link
-from phonenumbers import PhoneNumberMatcher
+from aiogram.exceptions import TelegramNotFound
 
 from ..filters.chat_type import ChatTypeFilter
 from ..filters.is_admin_bot import BotFilter
@@ -188,10 +188,13 @@ async def delete_message(message: Message, state: FSMContext):
 
     messages: MessageBase = await message_service.get_by_phone(phone=target_number)
     if messages:
-        await operator_bot.bot.delete_message(messages.chat_id, messages.id)
+        try:
+            await operator_bot.bot.delete_message(messages.chat_id, messages.id)
+        except TelegramNotFound:
+            await message.answer('Сообщение уже удалено', reply_markup=create_menu())
+        else:
+            await message.answer('Сообщение успешно удалено!', reply_markup=create_menu())
         await message_service.delete(pk=messages.id)
-
-        await message.answer('Сообщение успешно удалено!', reply_markup=create_menu())
     else:
         await message.answer('Сообщение не найдено')
 
