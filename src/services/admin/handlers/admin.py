@@ -37,6 +37,9 @@ class IsSuperAdmin(BaseFilter):
     async def __call__(self, message: Message) -> bool:
         return str(message.from_user.id) in self.super_admins
 
+    def fast_check(self, check_id: int) -> bool:
+        return str(check_id) in self.super_admins
+
 
 class SendMessageToAll(StatesGroup):
     write_text = State()
@@ -101,7 +104,8 @@ async def cancel(call: CallbackQuery, state: FSMContext):
 
 @router.message(Command('start'))
 async def start_bot(message: Message | CallbackQuery):
-    await message.bot.send_message(message.from_user.id, start_message, parse_mode="Markdown")
+    await message.bot.send_message(message.from_user.id, start_message, parse_mode="Markdown",
+                                   reply_markup=create_menu(IsSuperAdmin().fast_check(message.from_user.id)))
 
 
 @router.message(F.text.lower() == 'добавить чаты')
