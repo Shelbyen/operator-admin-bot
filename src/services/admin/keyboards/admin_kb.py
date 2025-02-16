@@ -27,7 +27,7 @@ async def create_admin_choosing():
     return InlineKeyboardMarkup(inline_keyboard=kb)
 
 
-def create_menu():
+def create_menu(is_super_admin: bool = False):
     kb = [
         [
             KeyboardButton(text="Добавить чаты"),
@@ -37,20 +37,19 @@ def create_menu():
             KeyboardButton(text="Добавить операторов"),
             KeyboardButton(text="Удалить операторов")
         ],
-        [
-            KeyboardButton(text='Удалить сообщение')
-        ],
-        [
-            KeyboardButton(text="Отправить во все чаты")
-        ]
-
+        [KeyboardButton(text='Удалить сообщение')]
     ]
+
+    if is_super_admin:
+        kb.append([KeyboardButton(text="Отправить во все чаты")])
+
     keyboard = ReplyKeyboardMarkup(
         keyboard=kb,
         resize_keyboard=True,
         input_field_placeholder="Выберите команду"
     )
     return keyboard
+
 
 def back_button():
     kb = [[InlineKeyboardButton(text='Назад', callback_data='back')]]

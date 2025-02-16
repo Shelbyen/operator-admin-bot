@@ -3,7 +3,7 @@ from typing import Optional, List
 
 from aiogram import Router, F
 from aiogram.exceptions import TelegramMigrateToChat, TelegramForbiddenError, TelegramBadRequest
-from aiogram.filters import Command
+from aiogram.filters import Command, BaseFilter
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import StatesGroup, State
 from aiogram.types import Message, CallbackQuery, InputMediaPhoto, InputMediaDocument, InputMediaVideo, InputMediaAudio, \
@@ -11,6 +11,7 @@ from aiogram.types import Message, CallbackQuery, InputMediaPhoto, InputMediaDoc
 from aiogram.utils.deep_linking import create_deep_link
 from aiogram.exceptions import TelegramNotFound
 
+from src.config.project_config import settings
 from ..filters.chat_type import ChatTypeFilter
 from ..filters.is_admin_bot import BotFilter
 from ..keyboards.admin_kb import create_chat_choosing, create_admin_choosing, create_menu, back_button
@@ -27,6 +28,14 @@ router = Router()
 router.message.filter(ChatTypeFilter())
 router.message.filter(BotFilter())
 router.callback_query.filter(BotFilter())
+
+
+class IsSuperAdmin(BaseFilter):
+    def __init__(self):
+        self.super_admins = settings.ADMINS_1.split('/')
+
+    async def __call__(self, message: Message) -> bool:
+        return str(message.from_user.id) in self.super_admins
 
 
 class SendMessageToAll(StatesGroup):
@@ -70,10 +79,13 @@ start_message = "**Добавить чаты** - по нажатию на кно
 @router.message(Command('update'))
 async def update_keyboard(message: Message):
     admins = await admin_service.filter()
-    new_keyboard = create_menu()
+    new_keyboard_1 = create_menu(True)
+    new_keyboard_2 = create_menu()
+    admins_1 = settings.ADMINS_1.split('/')
     for admin in admins:
         try:
-            await message.bot.send_message(admin.id, 'Сообщение для обновления клавиатуры', reply_markup=new_keyboard)
+            await message.bot.send_message(admin.id, 'Сообщение для обновления клавиатуры',
+                                           reply_markup=new_keyboard_1 if admin.id in admins_1 else new_keyboard_2)
         except TelegramForbiddenError:
             continue
         except TelegramBadRequest:
@@ -83,26 +95,26 @@ async def update_keyboard(message: Message):
 
 @router.callback_query(F.data == 'cancel')
 async def cancel(call: CallbackQuery, state: FSMContext):
-    await call.message.edit_text("Ок", reply_markup=create_menu())
+    await call.message.edit_text("Ок")
     await state.clear()
 
 
 @router.message(Command('start'))
 async def start_bot(message: Message | CallbackQuery):
-    await message.bot.send_message(message.from_user.id, start_message, reply_markup=create_menu(), parse_mode="Markdown")
+    await message.bot.send_message(message.from_user.id, start_message, parse_mode="Markdown")
 
 
 @router.message(F.text.lower() == 'добавить чаты')
 async def add_chat(message: Message):
     link = 'https://t.me/helper_operator_bot?startgroup='
-    await message.answer(f'Используйте ссылку ниже чтобы добавить бота в группу: {link}', reply_markup=create_menu())
+    await message.answer(f'Используйте ссылку ниже чтобы добавить бота в группу: {link}')
 
 
 @router.message(F.text.lower() == "добавить операторов")
 async def get_ref(message: Message):
     admin = await admin_service.get_with_update(str(message.from_user.id))
     link = create_deep_link('helper_operator_bot', 'start', str(admin.invite_hash), encode=True)
-    await message.answer(f"Ссылка для приглашения оператора: {link}", reply_markup=create_menu())
+    await message.answer(f"Ссылка для приглашения оператора: {link}")
 
 
 @router.message(F.text.lower() == "удалить чаты")
@@ -134,7 +146,7 @@ async def delete_admin(call: CallbackQuery):
     await choosing_delete_admin_start(call.message)
 
 
-@router.message(F.text.lower() == "отправить во все чаты")
+@router.message(F.text.lower() == "отправить во все чаты", IsSuperAdmin())
 async def send_all_command(message: Message, state: FSMContext):
     await state.set_state(SendMessageToAll.write_text)
     message = await message.answer(f"Отправьте ваше сообщение", reply_markup=back_button())
@@ -174,7 +186,7 @@ async def mass_mailing(message: Message, state: FSMContext, album: Optional[List
             await fix_send_message(i, message.text)
 
 
-    await message.answer('Сообщение успешно отправлено!', reply_markup=create_menu())
+    await message.answer('Сообщение успешно отправлено!')
     await state.clear()
     await message.bot.delete_message(chat_id=message.from_user.id, message_id=message_id)
 
@@ -205,9 +217,9 @@ async def delete_message(message: Message, state: FSMContext):
         try:
             await operator_bot.bot.delete_message(messages.chat_id, messages.id)
         except TelegramNotFound:
-            await message.answer('Сообщение уже удалено', reply_markup=create_menu())
+            await message.answer('Сообщение уже удалено')
         else:
-            await message.answer('Сообщение успешно удалено!', reply_markup=create_menu())
+            await message.answer('Сообщение успешно удалено!')
         await message_service.delete(pk=messages.id)
     else:
         await message.answer('Сообщение не найдено')

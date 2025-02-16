@@ -2,7 +2,6 @@ import asyncio
 
 from aiogram import Dispatcher
 
-from src.config.project_config import settings
 from src.services.admin.bot import admin_bot
 from src.services.admin.middlewares.album_middleware import AlbumMiddleware
 from src.services.admin.middlewares.log_middleware import LogMiddleware
