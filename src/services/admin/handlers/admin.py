@@ -213,7 +213,7 @@ async def delete_message_command(data: Message | CallbackQuery, state: FSMContex
 
     messages = []
     for kb in get_chat_keyboards(true_chats, '3'):
-        if data is Message:
+        if type(data) is Message:
             msg = await data.answer("Выберите группу", reply_markup=kb)
         else:
             msg = await data.message.answer("Выберите группу", reply_markup=kb)
