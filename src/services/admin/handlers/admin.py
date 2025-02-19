@@ -16,7 +16,7 @@ from src.services.operator_helper.bot import operator_bot
 from src.use_cases.chat_keyboard_use_case import get_chat_keyboards
 from ..filters.chat_type import ChatTypeFilter
 from ..filters.is_admin_bot import BotFilter
-from ..keyboards.admin_kb import create_admin_choosing, create_menu, back_button
+from ..keyboards.admin_kb import create_admin_choosing, create_menu, back_button, deleting_messages_kb
 from ..schemas.chat_schema import ChatBase, ChatCreate
 from ..schemas.message_schema import MessageBase
 from ..services.admin_service import admin_service
@@ -46,12 +46,26 @@ class SendMessageToAll(StatesGroup):
 
 
 class MessageDeleting(StatesGroup):
+    choosing_chat = State()
     choosing_number = State()
 
 
 def chunks(lst, chunk_size):
     for i in range(0, len(lst), chunk_size):
         yield lst[i:i + chunk_size]
+
+
+async def fix_deleting_message(target_message: MessageBase):
+    if target_message:
+        try:
+            await operator_bot.bot.delete_message(target_message.chat_id, target_message.id)
+            await message_service.delete(pk=target_message.id)
+        except TelegramNotFound:
+            return 'Сообщение уже удалено'
+        else:
+            return 'Сообщение успешно удалено!'
+    else:
+        return 'Сообщение не найдено'
 
 
 def except_when_send(send_function):
@@ -119,12 +133,12 @@ async def get_ref(message: Message):
 @router.message(F.text.lower() == "удалить чаты")
 async def choosing_delete_chat_start(message: Message):
     chats = await chat_service.filter(limit=450, order=['name'])
-    for kb in await get_chat_keyboards(chats, '4'):
+    for kb in get_chat_keyboards(chats, '2'):
         await message.answer("Выберите чаты которые хотите удалить:",
                              reply_markup=kb)
 
 
-@router.callback_query(F.data[0] == '4')
+@router.callback_query(F.data[0] == '2')
 async def delete_chat(call: CallbackQuery):
     chat_id = int(call.data.split('|')[1])
 
@@ -138,7 +152,7 @@ async def choosing_delete_admin_start(message: Message):
                          reply_markup=await create_admin_choosing())
 
 
-@router.callback_query(F.data[0] == '6')
+@router.callback_query(F.data[0] == '1')
 async def delete_admin(call: CallbackQuery):
     operator_id = call.data.split('|')[1]
 
@@ -191,32 +205,61 @@ async def mass_mailing(message: Message, state: FSMContext, album: Optional[List
 
 
 @router.message(F.text.lower() == 'удалить сообщение')
-async def delete_message_command(message: Message, state: FSMContext):
+async def delete_message_command(data: Message | CallbackQuery, state: FSMContext):
     chats = await chat_service.filter(limit=450, order=['name'])
+
+    # TODO: CHANGE THIS SHIT
+    true_chats = [chat for chat in chats if (await message_service.get_by_chat(chat.id)) is not None]
+
     messages = []
-    for kb in get_chat_keyboards(chats, '8'):
-        msg = await message.answer("Выберите группу", reply_markup=kb)
+    for kb in get_chat_keyboards(true_chats, '3'):
+        if data is Message:
+            msg = await data.answer("Выберите группу", reply_markup=kb)
+        else:
+            msg = await data.message.answer("Выберите группу", reply_markup=kb)
         messages.append(msg.message_id)
+
     await state.update_data({'messages_id': messages})
+    await state.set_state(MessageDeleting.choosing_chat)
 
 
-@router.callback_query(F.data[0] == '8')
+@router.callback_query(F.data[0] == '3', MessageDeleting.choosing_chat)
 async def get_chat_for_message(call: CallbackQuery, state: FSMContext):
     chat = await chat_service.get(call.data.split('|')[1])
     state_data = await state.get_data()
-    messages = state_data['messages']
+    messages = state_data['messages_id']
     await state.update_data({'chat_id': int(call.data.split('|')[1])})
     for i in messages:
         await call.bot.delete_message(call.from_user.id, i)
 
-    await call.message.answer(
-        f"Выбранный чат: {chat.name}\nТеперь выберите из списка или отправьте сообщением нужный номер")
+    messages = await message_service.get_by_chat(chat_id=chat.id)
+    msg = await call.message.answer(
+        f"Выбранный чат: {chat.name}\nТеперь выберите из списка или отправьте сообщением нужный номер",
+        reply_markup=deleting_messages_kb(messages))
+    await state.update_data({'message_id': msg.message_id, 'chat_id': chat.id})
     await state.set_state(MessageDeleting.choosing_number)
+
+
+@router.callback_query(F.data[0] == '5', MessageDeleting.choosing_number)
+async def return_to_chat_choosing(call: CallbackQuery, state: FSMContext):
+    await call.message.delete()
+    await state.set_data({})
+    await state.set_state(MessageDeleting.choosing_chat)
+    await delete_message_command(call, state)
+
+
+@router.callback_query(F.data[0] == '4', MessageDeleting.choosing_number)
+async def delete_message(call: CallbackQuery, state: FSMContext):
+    chat_id = (await state.get_data())['chat_id']
+    target_message: MessageBase = await message_service.get_by_phone(chat_id=chat_id,
+                                                                     phone=call.data.split('|')[1])
+    await call.message.answer(await fix_deleting_message(target_message))
+    await call.message.delete()
 
 
 @router.message(MessageDeleting.choosing_number)
 async def delete_message(message: Message, state: FSMContext):
-    message_id = (await state.get_data())['messages_id']
+    state_data = await state.get_data()
 
     if not message.text:
         await message.answer('Введите телефон правильно!')
@@ -228,20 +271,12 @@ async def delete_message(message: Message, state: FSMContext):
         return
     target_number = numbers[0][-10:]
 
-    messages: MessageBase = await message_service.get_by_phone(phone=target_number)
-    if messages:
-        try:
-            await operator_bot.bot.delete_message(messages.chat_id, messages.id)
-        except TelegramNotFound:
-            await message.answer('Сообщение уже удалено')
-        else:
-            await message.answer('Сообщение успешно удалено!')
-        await message_service.delete(pk=messages.id)
-    else:
-        await message.answer('Сообщение не найдено')
+    target_message: MessageBase = await message_service.get_by_phone(chat_id=str(state_data['chat_id']), phone=target_number)
+
+    await message.answer(await fix_deleting_message(target_message))
 
     await state.clear()
-    await message.bot.delete_message(chat_id=message.from_user.id, message_id=message_id)
+    await message.bot.delete_message(chat_id=message.from_user.id, message_id=state_data['message_id'])
 
 
 @router.callback_query(F.data == 'back')

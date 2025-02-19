@@ -15,7 +15,7 @@ async def create_admin_choosing():
     for i in a:
         kb.append(
             [InlineKeyboardButton(text=i.name,
-                                  callback_data=f'6|{i.id}|0')])
+                                  callback_data=f'1|{i.id}|0')])
     return InlineKeyboardMarkup(inline_keyboard=kb)
 
 
@@ -46,7 +46,9 @@ def create_menu(is_super_admin: bool = False):
 def deleting_messages_kb(messages: List[MessageBase]):
     kb = []
     for message in messages:
-        kb.append([InlineKeyboardButton(text='7|')])
+        kb.append([InlineKeyboardButton(text=f'8{message.phone}', callback_data=f'4|{message.id}|0')])
+    kb.append([InlineKeyboardButton(text='Вернуться к выбору чата', callback_data='5')])
+    return InlineKeyboardMarkup(inline_keyboard=kb)
 
 
 def back_button():

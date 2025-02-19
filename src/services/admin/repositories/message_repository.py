@@ -10,9 +10,18 @@ class MessageRepository(SqlAlchemyRepository[MessageModel, MessageCreate, Messag
     async def get_by_phone(
             self,
             phone: str,
-    ) -> list[ModelType] | None:
+            chat_id: str
+    ) -> ModelType | None:
         async with self._session_factory() as session:
-            stmt = select(self.model).where(self.model.phone == phone).order_by(self.model.created_at)
+            stmt = select(self.model).where(self.model.phone == phone, self.model.chat_id == chat_id).order_by(
+                self.model.created_at)
+
+            row = await session.execute(stmt)
+            return row.scalars().first()
+
+    async def get_by_chat(self, chat_id: str) -> list[ModelType] | None:
+        async with self._session_factory() as session:
+            stmt = select(self.model).where(self.model.chat_id == chat_id).order_by(self.model.created_at)
 
             row = await session.execute(stmt)
             return row.scalars().all()
