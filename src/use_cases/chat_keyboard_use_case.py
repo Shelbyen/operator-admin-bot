@@ -22,6 +22,5 @@ def get_chat_keyboards(chats: List[ChatBase], command_num: str) -> List[InlineKe
             kb.append(
                 [InlineKeyboardButton(text=i.name,
                                       callback_data=f'{command_num}|{i.id}|0')])
-            kbs.append(InlineKeyboardMarkup(inline_keyboard=kb))
-
+        kbs.append(InlineKeyboardMarkup(inline_keyboard=kb))
     return kbs
