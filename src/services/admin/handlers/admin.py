@@ -209,7 +209,11 @@ async def delete_message_command(data: Message | CallbackQuery, state: FSMContex
     chats = await chat_service.filter(limit=450, order=['name'])
 
     # TODO: CHANGE THIS SHIT
+
     true_chats = [chat for chat in chats if (await message_service.get_by_chat(chat.id)) is not None]
+
+    for chat in chats:
+        print(await message_service.get_by_chat(chat.id))
 
     messages = []
     for kb in get_chat_keyboards(true_chats, '3'):
