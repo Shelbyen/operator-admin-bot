@@ -46,7 +46,7 @@ def create_menu(is_super_admin: bool = False):
 def deleting_messages_kb(messages: List[MessageBase]):
     kb = []
     for message in messages:
-        kb.append([InlineKeyboardButton(text=f'8{message.phone}', callback_data=f'4|{message.id}|0')])
+        kb.append([InlineKeyboardButton(text=f'8{message.phone}', callback_data=f'4|{message.phone}|0')])
     kb.append([InlineKeyboardButton(text='Вернуться к выбору чата', callback_data='5')])
     return InlineKeyboardMarkup(inline_keyboard=kb)
 
