@@ -3,26 +3,26 @@ from typing import Optional, List
 
 from aiogram import Router, F
 from aiogram.exceptions import TelegramMigrateToChat, TelegramForbiddenError, TelegramBadRequest
+from aiogram.exceptions import TelegramNotFound
 from aiogram.filters import Command, BaseFilter
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import StatesGroup, State
 from aiogram.types import Message, CallbackQuery, InputMediaPhoto, InputMediaDocument, InputMediaVideo, InputMediaAudio, \
     InputMediaAnimation
 from aiogram.utils.deep_linking import create_deep_link
-from aiogram.exceptions import TelegramNotFound
 
 from src.config.project_config import settings
+from src.services.operator_helper.bot import operator_bot
+from src.use_cases.chat_keyboard_use_case import get_chat_keyboards
 from ..filters.chat_type import ChatTypeFilter
 from ..filters.is_admin_bot import BotFilter
-from ..keyboards.admin_kb import create_chat_choosing, create_admin_choosing, create_menu, back_button
+from ..keyboards.admin_kb import create_admin_choosing, create_menu, back_button
 from ..schemas.chat_schema import ChatBase, ChatCreate
 from ..schemas.message_schema import MessageBase
 from ..services.admin_service import admin_service
 from ..services.chat_service import chat_service
 from ..services.message_service import message_service
 from ..services.operator_service import operator_service
-
-from src.services.operator_helper.bot import operator_bot
 
 router = Router()
 router.message.filter(ChatTypeFilter())
@@ -46,8 +46,7 @@ class SendMessageToAll(StatesGroup):
 
 
 class MessageDeleting(StatesGroup):
-    write_number = State()
-    choosing_message = State()
+    choosing_number = State()
 
 
 def chunks(lst, chunk_size):
@@ -64,7 +63,9 @@ def except_when_send(send_function):
             await chat_service.create(ChatCreate(id=e.migrate_to_chat_id, name=chat.name))
             chat.id = e.migrate_to_chat_id
             await send_function(chat, *args, **kwargs)
+
     return wrapper
+
 
 @except_when_send
 async def fix_send_media_group(chat: ChatBase, media_group):
@@ -96,12 +97,6 @@ async def update_keyboard(message: Message):
     await message.answer('Клавиатура обновлена!')
 
 
-@router.callback_query(F.data == 'cancel')
-async def cancel(call: CallbackQuery, state: FSMContext):
-    await call.message.edit_text("Ок")
-    await state.clear()
-
-
 @router.message(Command('start'))
 async def start_bot(message: Message | CallbackQuery):
     await message.bot.send_message(message.from_user.id, start_message, parse_mode="Markdown",
@@ -123,9 +118,10 @@ async def get_ref(message: Message):
 
 @router.message(F.text.lower() == "удалить чаты")
 async def choosing_delete_chat_start(message: Message):
-    for chat_group in list(chunks(sorted(await chat_service.filter(limit=500), key=lambda x: x.name.lower()), 100)):
+    chats = await chat_service.filter(limit=450, order=['name'])
+    for kb in await get_chat_keyboards(chats, '4'):
         await message.answer("Выберите чаты которые хотите удалить:",
-                             reply_markup=await create_chat_choosing(chat_group))
+                             reply_markup=kb)
 
 
 @router.callback_query(F.data[0] == '4')
@@ -189,7 +185,6 @@ async def mass_mailing(message: Message, state: FSMContext, album: Optional[List
         for i in chats:
             await fix_send_message(i, message.text)
 
-
     await message.answer('Сообщение успешно отправлено!')
     await state.clear()
     await message.bot.delete_message(chat_id=message.from_user.id, message_id=message_id)
@@ -197,14 +192,31 @@ async def mass_mailing(message: Message, state: FSMContext, album: Optional[List
 
 @router.message(F.text.lower() == 'удалить сообщение')
 async def delete_message_command(message: Message, state: FSMContext):
-    await state.set_state(MessageDeleting.write_number)
-    message = await message.answer(f"Отправьте номер телефона", reply_markup=back_button())
-    await state.update_data({'message_id': message.message_id})
+    chats = await chat_service.filter(limit=450, order=['name'])
+    messages = []
+    for kb in get_chat_keyboards(chats, '8'):
+        msg = await message.answer("Выберите группу", reply_markup=kb)
+        messages.append(msg.message_id)
+    await state.update_data({'messages_id': messages})
 
 
-@router.message(MessageDeleting.write_number)
+@router.callback_query(F.data[0] == '8')
+async def get_chat_for_message(call: CallbackQuery, state: FSMContext):
+    chat = await chat_service.get(call.data.split('|')[1])
+    state_data = await state.get_data()
+    messages = state_data['messages']
+    await state.update_data({'chat_id': int(call.data.split('|')[1])})
+    for i in messages:
+        await call.bot.delete_message(call.from_user.id, i)
+
+    await call.message.answer(
+        f"Выбранный чат: {chat.name}\nТеперь выберите из списка или отправьте сообщением нужный номер")
+    await state.set_state(MessageDeleting.choosing_number)
+
+
+@router.message(MessageDeleting.choosing_number)
 async def delete_message(message: Message, state: FSMContext):
-    message_id = (await state.get_data())['message_id']
+    message_id = (await state.get_data())['messages_id']
 
     if not message.text:
         await message.answer('Введите телефон правильно!')

@@ -1,17 +1,9 @@
+from typing import List
+
 from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup, ReplyKeyboardMarkup, KeyboardButton
 
+from ..schemas.message_schema import MessageBase
 from ..services.operator_service import operator_service
-
-
-async def create_chat_choosing(all_chats):
-    if all_chats is None:
-        all_chats = []
-
-    kb = []
-    for i in all_chats:
-        kb.append(
-            [InlineKeyboardButton(text=i.name, callback_data=f'4|{i.id}|0')])
-    return InlineKeyboardMarkup(inline_keyboard=kb)
 
 
 async def create_admin_choosing():
@@ -49,6 +41,12 @@ def create_menu(is_super_admin: bool = False):
         input_field_placeholder="Выберите команду"
     )
     return keyboard
+
+
+def deleting_messages_kb(messages: List[MessageBase]):
+    kb = []
+    for message in messages:
+        kb.append([InlineKeyboardButton(text='7|')])
 
 
 def back_button():

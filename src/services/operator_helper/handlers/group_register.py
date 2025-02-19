@@ -1,9 +1,9 @@
-from aiogram import Router, Bot
+from aiogram import Router, Bot, F
 from aiogram.filters import ChatMemberUpdatedFilter, JOIN_TRANSITION, LEAVE_TRANSITION
-from aiogram.types import ChatMemberUpdated
+from aiogram.types import ChatMemberUpdated, Message
 
 from ..filters.chat_type import ChatTypeFilter
-from ..schemas.chat_schema import ChatCreate
+from ..schemas.chat_schema import ChatCreate, ChatUpdate
 from ..services.admin_service import admin_service
 from ..services.chat_service import chat_service
 
@@ -21,7 +21,19 @@ async def add_chat(event: ChatMemberUpdated, bot: Bot):
     print(f'Новый чат!\nid: {event.chat.id}\nname: {event.chat.full_name}')
     await event.answer('Чат успешно добавлен!')
 
+
 @router.my_chat_member(ChatMemberUpdatedFilter(member_status_changed=LEAVE_TRANSITION))
 async def add_chat(event: ChatMemberUpdated):
     await chat_service.delete(str(event.chat.id))
     print(f'Чат удален!\nid: {event.chat.id}\nname: {event.chat.full_name}')
+
+
+@router.message(F.migrate_to_chat_id)
+async def group_to_supegroup_migration(message: Message):
+    await chat_service.delete(message.chat.id)
+    await chat_service.create(ChatCreate(id=str(message.migrate_to_chat_id), name=message.chat.full_name))
+
+
+@router.message(F.new_chat_title)
+async def changing_chat_title(message: Message):
+    await chat_service.update(pk=message.chat.id, model=ChatUpdate(name=message.chat.full_name))

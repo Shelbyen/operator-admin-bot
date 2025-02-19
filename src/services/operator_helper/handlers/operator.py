@@ -8,6 +8,7 @@ from aiogram.fsm.state import StatesGroup, State
 from aiogram.types import CallbackQuery, Message, InputMediaPhoto, InputMediaDocument, InputMediaVideo, InputMediaAudio, \
     InputMediaAnimation
 
+from src.use_cases.chat_keyboard_use_case import get_chat_keyboards
 from ..filters.chat_type import ChatTypeFilter
 from ..keyboards.operator_kb import *
 from ..schemas.message_schema import MessageCreate
@@ -16,12 +17,6 @@ from ..services.message_service import message_service
 
 router = Router()
 router.message.filter(ChatTypeFilter())
-
-
-def chunks(lst, chunk_size):
-    for i in range(0, len(lst), chunk_size):
-        yield lst[i:i + chunk_size]
-
 
 start_message = "Отправить сообщение - выпадает список подключенных чатов, после нажатия данный чат будет выбран. Далее потребует сообщение. После успешной отправки бот выдаст соответсвующее сообщение."
 
@@ -46,11 +41,11 @@ async def menu(message: Message, state: FSMContext):
 
 @router.message(or_f(StateFilter(None), and_f(F.text.contains('Отправить сообщение'), OrderSend.write_text)))
 async def activate_sender(message: Message, state: FSMContext):
-    all_chats = sorted(await chat_service.filter(limit=300), key=lambda x: x.name.lower())
     messages = []
-    for chat_group in list(chunks(all_chats, 100)):
+    chats = await chat_service.filter(limit=450, order=['name'])
+    for kb in get_chat_keyboards(chats, '0'):
         m = await message.answer("Выберите подключенный чат:",
-                                 reply_markup=await create_chat_choosing(chat_group, message.bot))
+                                 reply_markup=kb)
         messages.append(m.message_id)
     await state.update_data({'messages': messages})
     await state.set_state(OrderSend.choosing_chats)
@@ -59,15 +54,15 @@ async def activate_sender(message: Message, state: FSMContext):
 @router.callback_query(F.data[0] == '1')
 async def choosing_chats(call: CallbackQuery, state: FSMContext):
     await state.set_data({})
-    all_chats = sorted(await chat_service.filter(limit=300), key=lambda x: x.name.lower())
     messages = []
-    for i, chat_group in enumerate(list(chunks(all_chats, 100))):
+    chats = await chat_service.filter(limit=450, order=['name'])
+    for i, kb in enumerate(get_chat_keyboards(chats, '0')):
         if i == 0:
             m = await call.message.edit_text("Выберите подключенный чат:",
-                                             reply_markup=await create_chat_choosing(chat_group, call.bot))
+                                             reply_markup=kb)
         else:
             m = await call.message.answer("Выберите подключенный чат:",
-                                          reply_markup=await create_chat_choosing(chat_group, call.bot))
+                                          reply_markup=kb)
         messages.append(m.message_id)
     await state.update_data({'messages': messages})
     await state.set_state(OrderSend.choosing_chats)

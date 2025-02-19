@@ -12,10 +12,10 @@ class MessageRepository(SqlAlchemyRepository[MessageModel, MessageCreate, Messag
             phone: str,
     ) -> list[ModelType] | None:
         async with self._session_factory() as session:
-            stmt = select(self.model).where(self.model.phone == phone)
+            stmt = select(self.model).where(self.model.phone == phone).order_by(self.model.created_at)
 
             row = await session.execute(stmt)
-            return row.scalars().first()
+            return row.scalars().all()
 
 
 message_repository = MessageRepository(model=MessageModel, db_session=db_helper.get_db_session)
