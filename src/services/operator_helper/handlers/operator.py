@@ -117,7 +117,7 @@ async def choosing_chats(message: Message, state: FSMContext, album: Optional[Li
         numbers = re.finditer(r'((\+7|8|7)[\- ]?)[0-9]{10}', text_data)
         await message_service.create_many(
             [MessageCreate(id=str(send_message.message_id), chat_id=str(chat_id), phone=number[0][-10:],
-                           message=text_data) for number in numbers])
+                           message=text_data) for number in set(numbers)])
 
     await message.answer('Сообщение успешно отправлено!')
     await state.clear()
