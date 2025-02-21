@@ -103,11 +103,14 @@ async def choosing_chats(message: Message, state: FSMContext, album: Optional[Li
                     media_group.append(InputMediaAudio(media=file_id, caption=msg.caption))
                 elif msg.animation:
                     media_group.append(InputMediaAnimation(media=file_id, caption=msg.caption))
-            text_data += message.caption
+            text_data += message.caption + " "
         # await state.set_data({'message': media_group, 'sent': []})
         send_message = (await message.bot.send_media_group(chat_id, media_group))[0]
     else:
-        text_data = message.text
+        if message.text:
+            text_data = message.text
+        else:
+            text_data = message.caption
         send_message = await message.copy_to(chat_id)
 
     if text_data:
