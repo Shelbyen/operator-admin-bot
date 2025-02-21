@@ -103,15 +103,17 @@ async def choosing_chats(message: Message, state: FSMContext, album: Optional[Li
                 elif msg.animation:
                     media_group.append(InputMediaAnimation(media=file_id, caption=msg.caption))
         # await state.set_data({'message': media_group, 'sent': []})
+        text_data = message.caption
         send_message = (await message.bot.send_media_group(chat_id, media_group))[0]
     else:
+        text_data = message.text
         send_message = await message.copy_to(chat_id)
 
-    if message.text:
-        numbers = re.finditer(r'((\+7|8|7)[\- ]?)[0-9]{10}', message.text)
+    if text_data:
+        numbers = re.finditer(r'((\+7|8|7)[\- ]?)[0-9]{10}', text_data)
         await message_service.create_many(
             [MessageCreate(id=str(send_message.message_id), chat_id=str(chat_id), phone=number[0][-10:],
-                           message=message.text) for number in numbers])
+                           message=text_data) for number in numbers])
 
     await message.answer('Сообщение успешно отправлено!')
     await state.clear()
