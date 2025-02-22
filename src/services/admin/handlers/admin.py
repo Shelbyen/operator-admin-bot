@@ -60,7 +60,7 @@ async def fix_deleting_message(target_message: MessageBase):
         try:
             await operator_bot.bot.delete_message(target_message.chat_id, target_message.id)
             await message_service.delete(pk=target_message.id)
-        except TelegramNotFound:
+        except TelegramNotFound or TelegramBadRequest:
             return 'Сообщение уже удалено'
         else:
             return 'Сообщение успешно удалено!'
@@ -278,6 +278,8 @@ async def delete_message(message: Message, state: FSMContext):
 
     await state.clear()
     await message.bot.delete_message(chat_id=message.from_user.id, message_id=state_data['message_id'])
+
+    await delete_message_command(message, state)
 
 
 @router.callback_query(F.data == 'back')
