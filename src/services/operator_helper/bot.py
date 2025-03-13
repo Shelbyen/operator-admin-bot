@@ -1,6 +1,6 @@
 from aiogram import Bot, Dispatcher
 
-from .handlers import operator, user_register, group_register
+from .handlers import operator, user_register, group_register, channel_register
 from .middlewares.permission_middleware import PermissionMiddleware
 from src.config.project_config import settings
 
@@ -18,7 +18,7 @@ class OperatorBot:
         operator.router.message.middleware(PermissionMiddleware())
         group_register.router.message.middleware(PermissionMiddleware())
 
-        dp.include_routers(user_register.router, operator.router, group_register.router)
+        dp.include_routers(user_register.router, operator.router, channel_register.router, group_register.router)
 
         dp.startup.register(on_startup)
 
