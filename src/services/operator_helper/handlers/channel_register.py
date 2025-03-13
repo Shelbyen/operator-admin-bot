@@ -1,19 +1,15 @@
 from aiogram import Router, Bot, F
-from aiogram.filters import ChatMemberUpdatedFilter, JOIN_TRANSITION, LEAVE_TRANSITION, BaseFilter
+from aiogram.filters import ChatMemberUpdatedFilter, JOIN_TRANSITION, LEAVE_TRANSITION
 from aiogram.types import ChatMemberUpdated, Message
 
+from src.services.operator_helper.filters.chat_type import ChatTypeFilter
 from src.services.operator_helper.schemas.chat_schema import ChatCreate, ChatUpdate
 from src.services.operator_helper.services.admin_service import admin_service
 from src.services.operator_helper.services.chat_service import chat_service
 
-
-class IsChannel(BaseFilter):
-    async def __call__(self, message: Message) -> bool:
-        return message.chat.type == 'channel'
-
-
 router = Router()
-router.message.filter(IsChannel())
+router.my_chat_member.filter(ChatTypeFilter(is_channel=True))
+router.message.filter(ChatTypeFilter(is_channel=True))
 
 
 @router.my_chat_member(ChatMemberUpdatedFilter(member_status_changed=JOIN_TRANSITION))

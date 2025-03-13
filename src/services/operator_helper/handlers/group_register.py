@@ -8,6 +8,7 @@ from ..services.admin_service import admin_service
 from ..services.chat_service import chat_service
 
 router = Router()
+router.my_chat_member.filter(ChatTypeFilter(is_group=True))
 router.message.filter(ChatTypeFilter(is_group=True))
 
 
