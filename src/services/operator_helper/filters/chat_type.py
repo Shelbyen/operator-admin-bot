@@ -8,4 +8,4 @@ class ChatTypeFilter(BaseFilter):
         self.is_channel = is_channel
 
     async def __call__(self, message: Message) -> bool:
-        return (message.chat.type in ["group", "supergroup"]) == self.is_group or (message.chat.type == 'channel') == self.is_channel
+        return (message.chat.type in ["group", "supergroup"]) == self.is_group and (message.chat.type == 'channel') == self.is_channel
