@@ -81,6 +81,11 @@ async def active_mail_message(call: CallbackQuery, state: FSMContext):
     await state.set_state(OrderSend.write_text)
 
 
+async def except_when_send_video(send_video_func, *args, **kwargs) -> Message:
+    r = send_video_func(*args, **kwargs)
+    return r
+
+
 @router.message(OrderSend.write_text)
 async def choosing_chats(message: Message, state: FSMContext, album: Optional[List[Message]] = None):
     # await state.set_state(OrderSend.choosing_chats)
@@ -105,13 +110,13 @@ async def choosing_chats(message: Message, state: FSMContext, album: Optional[Li
                     media_group.append(InputMediaAnimation(media=file_id, caption=msg.caption))
             text_data += message.caption + " "
         # await state.set_data({'message': media_group, 'sent': []})
-        send_message = (await message.bot.send_media_group(chat_id, media_group))[0]
+        send_message = (await except_when_send_video(message.bot.send_media_group, chat_id=chat_id, media=media_group))[0]
     else:
         if message.text:
             text_data = message.text
         else:
             text_data = message.caption
-        send_message = await message.copy_to(chat_id)
+        send_message = await except_when_send_video(message.copy_to, chat_id=chat_id)
 
     if text_data:
         numbers = re.finditer(r'((\+7|8|7)[\- ]?)[0-9]{10}', text_data)
