@@ -82,7 +82,7 @@ async def active_mail_message(call: CallbackQuery, state: FSMContext):
 
 
 async def except_when_send_video(send_video_func, *args, **kwargs) -> Message:
-    r = send_video_func(*args, **kwargs)
+    r = await send_video_func(*args, **kwargs)
     return r
 
 
