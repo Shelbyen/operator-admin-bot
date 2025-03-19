@@ -8,6 +8,6 @@ class MessageModel(Base):
     __tablename__ = "messages"
 
     id: Mapped[str] = mapped_column(String, primary_key=True)
-    chat_id: Mapped[str] = mapped_column(ForeignKey('chats.id'))
+    chat_id: Mapped[str] = mapped_column(ForeignKey('chats.id', ondelete='CASCADE'))
     phone: Mapped[str] = mapped_column(String, primary_key=True)
     message: Mapped[str] = mapped_column(Text)
