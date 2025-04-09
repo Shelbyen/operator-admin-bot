@@ -4,8 +4,10 @@ from aiogram.types import ChatMemberUpdated, Message
 
 from ..filters.chat_type import ChatTypeFilter
 from ..schemas.chat_schema import ChatCreate, ChatUpdate
+from ..schemas.message_schema import MessageCreate
 from ..services.admin_service import admin_service
 from ..services.chat_service import chat_service
+from ..services.message_service import message_service
 
 router = Router()
 router.my_chat_member.filter(ChatTypeFilter(is_group=True))
@@ -31,8 +33,13 @@ async def add_chat(event: ChatMemberUpdated):
 
 @router.message(F.migrate_to_chat_id)
 async def group_to_supegroup_migration(message: Message):
+    chat_messages = await message_service.get_by_chat(chat_id=str(message.chat.id))
     await chat_service.delete(message.chat.id)
     await chat_service.create(ChatCreate(id=str(message.migrate_to_chat_id), name=message.chat.full_name))
+    await message_service.create_many([MessageCreate(id=i.id,
+                                                     chat_id=str(message.migrate_to_chat_id),
+                                                     phone=i.phone,
+                                                     message=i.message) for i in chat_messages])
 
 
 @router.message(F.new_chat_title)
