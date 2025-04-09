@@ -141,8 +141,10 @@ async def choosing_delete_chat_start(message: Message):
 @router.callback_query(F.data[0] == '2')
 async def delete_chat(call: CallbackQuery):
     chat_id = int(call.data.split('|')[1])
+    if await chat_service.get(str(chat_id)):
+        await chat_service.delete(str(chat_id))
+        await operator_bot.bot.leave_chat(chat_id=chat_id)
 
-    await chat_service.delete(str(chat_id))
     await choosing_delete_chat_start(call.message)
 
 
