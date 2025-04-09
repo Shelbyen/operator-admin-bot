@@ -23,7 +23,6 @@ start_message = "Отправить сообщение - выпадает спи
 
 class OrderSend(StatesGroup):
     write_text = State()
-    choosing_chats = State()
 
 
 @router.callback_query(F.data == 'cancel')
@@ -48,7 +47,6 @@ async def activate_sender(message: Message, state: FSMContext):
                                  reply_markup=kb)
         messages.append(m.message_id)
     await state.update_data({'messages': messages})
-    await state.set_state(OrderSend.choosing_chats)
 
 
 @router.callback_query(F.data[0] == '1')
@@ -65,10 +63,9 @@ async def choosing_chats(call: CallbackQuery, state: FSMContext):
                                           reply_markup=kb)
         messages.append(m.message_id)
     await state.update_data({'messages': messages})
-    await state.set_state(OrderSend.choosing_chats)
 
 
-@router.callback_query(OrderSend.choosing_chats, F.data[0] == '0')
+@router.callback_query(F.data[0] == '0')
 async def active_mail_message(call: CallbackQuery, state: FSMContext):
     chat = await chat_service.get(call.data.split('|')[1])
     state_data = await state.get_data()
