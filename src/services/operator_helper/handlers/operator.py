@@ -1,7 +1,9 @@
 import re
+from contextlib import suppress
 from typing import Optional, List
 
 from aiogram import Router, F
+from aiogram.exceptions import TelegramBadRequest
 from aiogram.filters import Command, StateFilter, or_f, and_f
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import StatesGroup, State
@@ -69,10 +71,11 @@ async def choosing_chats(call: CallbackQuery, state: FSMContext):
 async def active_mail_message(call: CallbackQuery, state: FSMContext):
     chat = await chat_service.get(call.data.split('|')[1])
     state_data = await state.get_data()
-    messages = state_data['messages']
+    messages = state_data.get('messages', [])
     await state.update_data({'chat_id': int(call.data.split('|')[1])})
     for i in messages:
-        await call.bot.delete_message(call.from_user.id, i)
+        with suppress(TelegramBadRequest):
+            await call.bot.delete_message(call.from_user.id, i)
     await call.message.answer(f"Выбранный чат: {chat.name}\nТеперь отправьте ваше сообщение",
                               reply_markup=back_to_choosing())
     await state.set_state(OrderSend.write_text)
