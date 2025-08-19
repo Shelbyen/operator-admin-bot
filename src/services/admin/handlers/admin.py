@@ -74,7 +74,7 @@ def except_when_send(send_function):
             await send_function(chat, *args, **kwargs)
         except TelegramMigrateToChat as e:
             await chat_service.delete(chat.id)
-            await chat_service.create(ChatCreate(id=e.migrate_to_chat_id, name=chat.name))
+            await chat_service.create(ChatCreate(id=str(e.migrate_to_chat_id), name=chat.name))
             chat.id = e.migrate_to_chat_id
             await send_function(chat, *args, **kwargs)
 
