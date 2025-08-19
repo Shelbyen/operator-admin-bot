@@ -14,7 +14,6 @@ class ChatCreate(ChatBase):
 
 class ChatUpdate(BaseModel):
     name: str
-    updated_at: datetime
 
 
 class ChatResponse(ChatBase):
