@@ -8,4 +8,8 @@ COPY requirements.txt ./
 RUN pip install --no-cache-dir -r requirements.txt
 
 COPY . .
-CMD ["python", "./bot.py"]
+
+RUN alembic revision --autogenerate -m "Init"
+RUN alembic upgrade head
+
+CMD ["python", "start_bots.py"]

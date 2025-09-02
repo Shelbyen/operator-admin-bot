@@ -5,3 +5,4 @@ pydantic_settings==2.3.4
 python-dotenv==1.0.1
 SQLAlchemy==2.0.31
 asyncpg==0.29.0
+alembic==1.15.1
