@@ -12,6 +12,7 @@ from aiogram.types import CallbackQuery, Message, InputMediaPhoto, InputMediaDoc
 
 from src.use_cases.chat_keyboard_use_case import get_chat_keyboards
 from ..filters.chat_type import ChatTypeFilter
+from ..filters.chat_exist import ChatExistFilter
 from ..keyboards.operator_kb import *
 from ..schemas.message_schema import MessageCreate
 from ..services.chat_service import chat_service
@@ -67,7 +68,7 @@ async def choosing_chats(call: CallbackQuery, state: FSMContext):
     await state.update_data({'messages': messages})
 
 
-@router.callback_query(F.data[0] == '0')
+@router.callback_query(F.data[0] == '0', ChatExistFilter(lambda x: x.data.split('|')[1]))
 async def active_mail_message(call: CallbackQuery, state: FSMContext):
     chat = await chat_service.get(call.data.split('|')[1])
     state_data = await state.get_data()
@@ -87,7 +88,9 @@ async def except_when_send_video(send_video_func, *args, **kwargs) -> Message:
 
 
 @router.message(OrderSend.write_text)
-async def choosing_chats(message: Message, state: FSMContext, album: Optional[List[Message]] = None):
+async def send_message_to_selected_chat(message: Message, 
+                                        state: FSMContext, 
+                                        album: Optional[List[Message]] = None):
     # await state.set_state(OrderSend.choosing_chats)
     chat_id = (await state.get_data())["chat_id"]
     if album:
