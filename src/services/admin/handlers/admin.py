@@ -208,7 +208,7 @@ async def mass_mailing(message: Message, state: FSMContext, album: Optional[List
 
 @router.message(F.text.lower() == 'удалить сообщение')
 async def delete_message_command(data: Message | CallbackQuery, state: FSMContext):
-    chats = await chat_service.filter(limit=450, order=['name'])
+    chats = await chat_service.filter(limit=1000, order=['name'])
 
     # TODO: CHANGE THIS SHIT
 

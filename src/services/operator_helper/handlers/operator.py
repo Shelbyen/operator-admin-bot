@@ -44,7 +44,7 @@ async def menu(message: Message, state: FSMContext):
 @router.message(or_f(StateFilter(None), and_f(F.text.contains('Отправить сообщение'), OrderSend.write_text)))
 async def activate_sender(message: Message, state: FSMContext):
     messages = []
-    chats = await chat_service.filter(limit=450, order=['name'])
+    chats = await chat_service.filter(limit=1000, order=['name'])
     for kb in get_chat_keyboards(chats, '0'):
         m = await message.answer("Выберите подключенный чат:",
                                  reply_markup=kb)
@@ -56,7 +56,7 @@ async def activate_sender(message: Message, state: FSMContext):
 async def choosing_chats(call: CallbackQuery, state: FSMContext):
     await state.set_data({})
     messages = []
-    chats = await chat_service.filter(limit=450, order=['name'])
+    chats = await chat_service.filter(limit=1000, order=['name'])
     for i, kb in enumerate(get_chat_keyboards(chats, '0')):
         if i == 0:
             m = await call.message.edit_text("Выберите подключенный чат:",
