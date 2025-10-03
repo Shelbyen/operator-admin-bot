@@ -7,11 +7,11 @@ class ChatExistFilter(BaseFilter):
     def __init__(self, get_chat_id_func, entity: str = 'call'):
         self.get_chat_id = get_chat_id_func
         self.entity_for_find = entity
-    async def __call__(self, data: Message | CallbackQuery | None = None) -> bool:
-        if data is None:
+    async def __call__(self, m: Message | CallbackQuery | None = None) -> bool:
+        if m is None:
             return False
-        entity = data
-        if entity is None:
+        entity = m
+        if not isinstance(entity, (Message, CallbackQuery)[self.entity_for_find == 'call']):
             return False
         try:
             await entity.bot.get_chat(
