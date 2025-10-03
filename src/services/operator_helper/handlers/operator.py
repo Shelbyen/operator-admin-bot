@@ -68,7 +68,7 @@ async def choosing_chats(call: CallbackQuery, state: FSMContext):
     await state.update_data({'messages': messages})
 
 
-@router.callback_query(F.data[0] == '0', ChatExistFilter(lambda x: x.data.split('|')[1]))
+@router.callback_query(F.data[0] == '0', ChatExistFilter(lambda x: x.split('|')[1]))
 async def active_mail_message(call: CallbackQuery, state: FSMContext):
     chat = await chat_service.get(call.data.split('|')[1])
     state_data = await state.get_data()
