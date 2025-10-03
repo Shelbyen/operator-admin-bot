@@ -15,7 +15,7 @@ class ChatExistFilter(BaseFilter):
             return False
         try:
             await entity.bot.get_chat(
-                chat_id=self.get_chat_id(self.get_chat_id(entity))
+                chat_id=self.get_chat_id(entity)
             )
         except TelegramBadRequest as e:
             if "chat not found" not in str(e).lower():
