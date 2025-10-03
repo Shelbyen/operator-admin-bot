@@ -1,6 +1,5 @@
 from aiogram.filters import BaseFilter
 from aiogram.types import CallbackQuery, Message
-from aiogram import Bot
 from aiogram.exceptions import TelegramBadRequest
 
 
@@ -9,7 +8,6 @@ class ChatExistFilter(BaseFilter):
         self.get_chat_id = get_chat_id_func
         self.entity_for_find = entity
     async def __call__(self,
-                       bot: Bot,
                        message: Message | None = None,
                        call: CallbackQuery | None = None) -> bool:
         entity = (message, call)[self.entity_for_find == 'call']
@@ -27,7 +25,8 @@ class ChatExistFilter(BaseFilter):
                 await entity.answer(
                     'Сохранен неправильный чат, удалите и добавьте бота заного!')
             else:
-                await entity.message.answer(
-                    'Сохранен неправильный чат, удалите и добавьте бота заного!')
+                await entity.bot.send_message(
+                    chat_id=entity.from_user.id,
+                    text='Сохранен неправильный чат, удалите и добавьте бота заного!')
             return False
         return True
