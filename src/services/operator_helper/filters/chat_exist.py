@@ -7,14 +7,14 @@ class ChatExistFilter(BaseFilter):
     def __init__(self, get_chat_id_func, entity: str = 'call'):
         self.get_chat_id = get_chat_id_func
         self.entity_for_find = entity
-    async def __call__(self,
-                       message: Message | None = None,
-                       call: CallbackQuery | None = None) -> bool:
-        entity = (message, call)[self.entity_for_find == 'call']
+    async def __call__(self, data: Message | CallbackQuery | None = None) -> bool:
+        if data is None:
+            return False
+        entity = data
         if entity is None:
             return False
         try:
-            await bot.get_chat(
+            await entity.bot.get_chat(
                 chat_id=self.get_chat_id(self.get_chat_id(entity))
             )
         except TelegramBadRequest as e:
