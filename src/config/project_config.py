@@ -11,6 +11,8 @@ class Settings(BaseSettings):
     ADMINS: str
     ADMINS_1: str
     ADMINS_2: str
+    SERVICE_PORT: int
+    SERVICE_TOKEN: str
 
 
-settings = Settings()
+settings = Settings() # type: ignore
