@@ -29,8 +29,8 @@ async def send_photo(
 ):
     bot = operator_bot.bot
 
-    await bot.send_photo(chat_id=group_id, photo=file_id)
-    return {"status": "ok"}
+    message = await bot.send_photo(chat_id=group_id, photo=file_id)
+    return {"status": "ok", "message_url": message.get_url()}
 
 
 async def run_fastapi():
