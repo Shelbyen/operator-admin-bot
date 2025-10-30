@@ -26,7 +26,7 @@ async def add_chat(event: ChatMemberUpdated, bot: Bot):
 
 
 @router.my_chat_member(ChatMemberUpdatedFilter(member_status_changed=LEAVE_TRANSITION))
-async def add_chat(event: ChatMemberUpdated):
+async def delete_chat(event: ChatMemberUpdated):
     await chat_service.delete(str(event.chat.id))
     print(f'Чат удален!\nid: {event.chat.id}\nname: {event.chat.full_name}')
 

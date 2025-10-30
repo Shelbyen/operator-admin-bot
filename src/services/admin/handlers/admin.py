@@ -132,7 +132,7 @@ async def get_ref(message: Message):
 
 @router.message(F.text.lower() == "удалить чаты")
 async def choosing_delete_chat_start(message: Message):
-    chats = await chat_service.filter(limit=450, order=['name'])
+    chats = await chat_service.filter(limit=1000, order=['name'])
     for kb in get_chat_keyboards(chats, '2'):
         await message.answer("Выберите чаты которые хотите удалить:",
                              reply_markup=kb)
@@ -172,7 +172,7 @@ async def send_all_command(message: Message, state: FSMContext):
 @router.message(SendMessageToAll.write_text)
 async def mass_mailing(message: Message, state: FSMContext, album: Optional[List[Message]] = None):
     message_id = (await state.get_data())['message_id']
-    chats: List[ChatBase] = await chat_service.filter(limit=500)
+    chats: List[ChatBase] = await chat_service.filter(limit=1000)
     send = {}
     if album:
         media_group = []
