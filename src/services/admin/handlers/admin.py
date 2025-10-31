@@ -10,6 +10,7 @@ from aiogram.fsm.state import StatesGroup, State
 from aiogram.types import Message, CallbackQuery, InputMediaPhoto, InputMediaDocument, InputMediaVideo, InputMediaAudio, \
     InputMediaAnimation
 from aiogram.utils.deep_linking import create_deep_link
+from sqlalchemy.exc import IntegrityError
 
 from src.config.project_config import settings
 from src.services.operator_helper.bot import operator_bot
@@ -74,9 +75,14 @@ def except_when_send(send_function):
             await send_function(chat, *args, **kwargs)
         except TelegramMigrateToChat as e:
             await chat_service.delete(chat.id)
-            await chat_service.create(ChatCreate(id=str(e.migrate_to_chat_id), name=chat.name))
+            try:
+                await chat_service.create(ChatCreate(id=str(e.migrate_to_chat_id), name=chat.name))
+            except IntegrityError:
+                print('Supergroup already exists', chat.id)
             chat.id = e.migrate_to_chat_id
             await send_function(chat, *args, **kwargs)
+        except Exception as e:
+            print(f'Send to chat error: {e}')
 
     return wrapper
 
