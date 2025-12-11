@@ -111,14 +111,18 @@ async def send_message_to_selected_chat(message: Message,
                     media_group.append(InputMediaAudio(media=file_id, caption=msg.caption))
                 elif msg.animation:
                     media_group.append(InputMediaAnimation(media=file_id, caption=msg.caption))
-            text_data += message.caption + " "
+            if message.caption:
+                text_data += message.caption + " "
         # await state.set_data({'message': media_group, 'sent': []})
         send_message = (await except_when_send_video(message.bot.send_media_group, chat_id=chat_id, media=media_group))[0]
     else:
         if message.text:
             text_data = message.text
         else:
-            text_data = message.caption
+            if message.caption:
+                text_data = message.caption
+            else:
+                text_data = ""
         send_message = await except_when_send_video(message.copy_to, chat_id=chat_id)
 
     if text_data:
