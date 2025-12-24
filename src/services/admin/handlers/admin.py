@@ -61,7 +61,7 @@ async def fix_deleting_message(target_message: MessageBase):
         try:
             await operator_bot.bot.delete_message(target_message.chat_id, target_message.id)
             await message_service.delete(pk=target_message.id)
-        except TelegramNotFound or TelegramBadRequest:
+        except (TelegramNotFound, TelegramBadRequest):
             return 'Сообщение уже удалено'
         else:
             return 'Сообщение успешно удалено!'
@@ -70,7 +70,7 @@ async def fix_deleting_message(target_message: MessageBase):
 
 
 def except_when_send(send_function):
-    async def wrapper(chat: ChatBase, *args, **kwargs):
+    async def wrapper(chat: ChatBase, *args, **kwargs) -> ChatBase | None:
         try:
             await send_function(chat, *args, **kwargs)
         except TelegramMigrateToChat as e:
@@ -79,11 +79,12 @@ def except_when_send(send_function):
                 await chat_service.create(ChatCreate(id=str(e.migrate_to_chat_id), name=chat.name))
             except IntegrityError:
                 print('Supergroup already exists', chat.id)
-            chat.id = e.migrate_to_chat_id
+            chat.id = str(e.migrate_to_chat_id)
             await send_function(chat, *args, **kwargs)
         except Exception as e:
+            print('Error:', chat.id, chat.name)
             print(f'Send to chat error: {e}')
-
+            return chat
     return wrapper
 
 
@@ -180,6 +181,7 @@ async def mass_mailing(message: Message, state: FSMContext, album: Optional[List
     message_id = (await state.get_data())['message_id']
     chats: List[ChatBase] = await chat_service.filter(limit=1000)
     send = {}
+    error_chats = []
     if album:
         media_group = []
         for msg in album:
@@ -201,13 +203,22 @@ async def mass_mailing(message: Message, state: FSMContext, album: Optional[List
                     media_group.append(InputMediaAnimation(media=file_id, caption=msg.caption))
         # await state.set_data({'message': media_group, 'sent': []})
         for i in chats:
-            await fix_send_media_group(i, media_group)
+            chat = await fix_send_media_group(i, media_group)
+            if chat is not None:
+                error_chats.append(chat.name)
 
     else:
         for i in chats:
-            await fix_send_message(i, message.text)
+            chat = await fix_send_message(i, message.text)
+            if chat is not None:
+                error_chats.append(chat.name)
 
-    await message.answer('Сообщение успешно отправлено!')
+    if len(error_chats) == 0:
+        await message.answer('Сообщение успешно отправлено!')
+    else:
+        for split_message in split_message_for_tg(error_chats, 'Ошибка при отправке в чаты:'):
+            await message.answer(split_message)
+
     await state.clear()
     await message.bot.delete_message(chat_id=message.from_user.id, message_id=message_id)
 
@@ -294,3 +305,17 @@ async def delete_message(message: Message, state: FSMContext):
 async def back_to_menu(call: CallbackQuery, state: FSMContext):
     await state.clear()
     await call.message.delete()
+
+def split_message_for_tg(data: list[str], caption: str | None = None) -> list[str]:
+    t = 0
+    text = ['']
+    if caption:
+        text[t] = caption + '\n'
+    for s in range(len(data)):
+        if len(text[t] + data[s] + '\n') <= 4096:
+            text[t] += data[s] + '\n'
+        else:
+            t += 1
+            text.append(data[s] + '\n')
+    text[t] += '</pre>'
+    return text
