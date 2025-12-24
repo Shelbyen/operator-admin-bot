@@ -311,11 +311,10 @@ def split_message_for_tg(data: list[str], caption: str | None = None) -> list[st
     text = ['']
     if caption:
         text[t] = caption + '\n'
-    for s in range(len(data)):
-        if len(text[t] + data[s] + '\n') <= 4096:
-            text[t] += data[s] + '\n'
+    for s in data:
+        if len(text[t] + s + '\n') <= 4096:
+            text[t] += s + '\n'
         else:
             t += 1
-            text.append(data[s] + '\n')
-    text[t] += '</pre>'
+            text.append(s + '\n')
     return text
