@@ -92,7 +92,11 @@ async def send_message_to_selected_chat(message: Message,
                                         state: FSMContext, 
                                         album: Optional[List[Message]] = None):
     # await state.set_state(OrderSend.choosing_chats)
-    chat_id = (await state.get_data())["chat_id"]
+    chat_id = (await state.get_data()).get('chat_id')
+    if chat_id is None:
+        await message.answer('Сначала выберите чат!')
+        await state.clear()
+        return
     if album:
         media_group = []
         text_data = ''
