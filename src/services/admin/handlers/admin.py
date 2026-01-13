@@ -79,8 +79,15 @@ def except_when_send(send_function):
                 await chat_service.create(ChatCreate(id=str(e.migrate_to_chat_id), name=chat.name))
             except IntegrityError:
                 print('Supergroup already exists', chat.id)
-            chat.id = str(e.migrate_to_chat_id)
-            await send_function(chat, *args, **kwargs)
+
+            try:
+                chat.id = str(e.migrate_to_chat_id)
+                await send_function(chat, *args, **kwargs)
+            except Exception as e:
+                print('Error:', chat.id, chat.name)
+                print(f'Send to chat error: {e}')
+                return chat
+        
         except Exception as e:
             print('Error:', chat.id, chat.name)
             print(f'Send to chat error: {e}')
