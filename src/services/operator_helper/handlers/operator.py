@@ -92,7 +92,7 @@ async def except_when_send_video(send_video_func, *args, **kwargs) -> Message:
     try:
         r = await send_video_func(*args, **kwargs)
     except TelegramMigrateToChat as e:
-        await chat_service.delete(chat_id)
+        await chat_service.delete(str(chat_id))
         try:
             await chat_service.create(ChatCreate(id=str(e.migrate_to_chat_id), name=chat_name))
         except IntegrityError:
