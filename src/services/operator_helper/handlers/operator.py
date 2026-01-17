@@ -3,12 +3,15 @@ from contextlib import suppress
 from typing import Optional, List
 
 from aiogram import Router, F
-from aiogram.exceptions import TelegramBadRequest
+from aiogram.exceptions import TelegramBadRequest, TelegramMigrateToChat
 from aiogram.filters import Command, StateFilter, or_f, and_f
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import StatesGroup, State
 from aiogram.types import CallbackQuery, Message, InputMediaPhoto, InputMediaDocument, InputMediaVideo, InputMediaAudio, \
     InputMediaAnimation
+
+from sqlalchemy.exc import IntegrityError
+from ..schemas.chat_schema import ChatBase, ChatCreate
 
 from src.use_cases.chat_keyboard_use_case import get_chat_keyboards
 from ..filters.chat_type import ChatTypeFilter
@@ -83,7 +86,31 @@ async def active_mail_message(call: CallbackQuery, state: FSMContext):
 
 
 async def except_when_send_video(send_video_func, *args, **kwargs) -> Message:
-    r = await send_video_func(*args, **kwargs)
+    chat_id = kwargs["chat_id"]
+    chat_name = kwargs["chat_name"]
+    
+    try:
+        r = await send_video_func(*args, **kwargs)
+    except TelegramMigrateToChat as e:
+        await chat_service.delete(chat_id)
+        try:
+            await chat_service.create(ChatCreate(id=str(e.migrate_to_chat_id), name=chat_name))
+        except IntegrityError:
+            print('Supergroup already exists', chat_id)
+
+        try:
+            chat_id = str(e.migrate_to_chat_id)
+            kwargs["chat_id"] = chat_id
+            r = await send_video_func(*args, **kwargs)
+        except Exception as e:
+            print('Error:', chat_id, chat_name)
+            print(f'Send to chat error: {e}')
+            return None
+    
+    except Exception as e:
+        print('Error:', chat_id, chat_name)
+        print(f'Send to chat error: {e}')
+        return None
     return r
 
 
@@ -118,7 +145,7 @@ async def send_message_to_selected_chat(message: Message,
             if message.caption:
                 text_data += message.caption + " "
         # await state.set_data({'message': media_group, 'sent': []})
-        send_message = (await except_when_send_video(message.bot.send_media_group, chat_id=chat_id, media=media_group))[0]
+        send_message = (await except_when_send_video(message.bot.send_media_group, chat_id=chat_id, media=media_group, chat_name=message.chat.full_name))[0]
     else:
         if message.text:
             text_data = message.text
@@ -127,7 +154,7 @@ async def send_message_to_selected_chat(message: Message,
                 text_data = message.caption
             else:
                 text_data = ""
-        send_message = await except_when_send_video(message.copy_to, chat_id=chat_id)
+        send_message = await except_when_send_video(message.copy_to, chat_id=chat_id, chat_name=message.chat.full_name)
 
     if text_data:
         numbers = re.finditer(r'((\+7|8|7)[\- ]?)[0-9]{10}', text_data)
