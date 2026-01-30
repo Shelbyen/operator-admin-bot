@@ -1,16 +1,19 @@
 import asyncio
 
-from aiogram import Dispatcher
-from fastapi import FastAPI, HTTPException, Header, Depends
 import uvicorn
+from aiogram import Dispatcher
+from aiogram.fsm.context import FSMContext
+from fastapi import FastAPI, HTTPException, Header, Depends
 
+from services.operator_helper.handlers.operator import OrderSend
+from src.config.project_config import settings
 from src.services.admin.bot import admin_bot
 from src.services.admin.middlewares.album_middleware import AlbumMiddleware
 from src.services.admin.middlewares.log_middleware import LogMiddleware
 from src.services.operator_helper.bot import operator_bot
-from src.config.project_config import settings
 
 app = FastAPI(title="OperatorBot API")
+dp = Dispatcher()
 
 async def verify_bearer_token(authorization: str | None = Header(None)):
     if authorization is None or not authorization.startswith("Bearer "):
@@ -21,16 +24,23 @@ async def verify_bearer_token(authorization: str | None = Header(None)):
         raise HTTPException(status_code=401, detail="Unauthorized")
 
 
-@app.get("/send_photo")
+@app.get("/selectGroup")
 async def send_photo(
+    user_id: int,
     group_id: int,
-    file_id: str,
     token: None = Depends(verify_bearer_token) # pylint: disable=unused-argument
 ):
     bot = operator_bot.bot
+    state: FSMContext = await dp.fsm.get_context(
+        bot=bot,
+        chat_id=user_id,
+        user_id=user_id,
+    )
 
-    message = await bot.send_photo(chat_id=group_id, photo=file_id)
-    return {"status": "ok", "message_url": message.get_url()}
+    await state.update_data({'chat_id': int(group_id)})
+    await state.set_state(OrderSend.write_text)
+
+    return {"status": "ok"}
 
 
 async def run_fastapi():
@@ -42,8 +52,6 @@ async def run_fastapi():
 
 
 async def start_bots_polling():
-    dp = Dispatcher()
-
     dp.message.outer_middleware(AlbumMiddleware())
     dp.message.outer_middleware(LogMiddleware())
     dp.callback_query.outer_middleware(LogMiddleware())
