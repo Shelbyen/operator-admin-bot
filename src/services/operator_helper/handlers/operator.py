@@ -8,9 +8,11 @@ from aiogram.filters import Command, StateFilter, or_f, and_f
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import StatesGroup, State
 from aiogram.types import CallbackQuery, Message, InputMediaPhoto, InputMediaDocument, InputMediaVideo, InputMediaAudio, \
-    InputMediaAnimation
+    InputMediaAnimation, WebAppInfo
 
 from sqlalchemy.exc import IntegrityError
+
+from config.project_config import settings
 from ..schemas.chat_schema import ChatBase, ChatCreate
 
 from src.use_cases.chat_keyboard_use_case import get_chat_keyboards
@@ -40,8 +42,16 @@ async def cancel(call: CallbackQuery, state: FSMContext):
 @router.message(Command('start'))
 async def menu(message: Message, state: FSMContext):
     await state.clear()
-    await message.answer(start_message, reply_markup=create_menu())
-    await activate_sender(message, state)
+    message = await message.answer(start_message, reply_markup=create_menu())
+    await message.edit_reply_markup(reply_markup=InlineKeyboardMarkup(
+        row_width=1,
+        inline_keyboard=[
+            [
+                InlineKeyboardButton(text="Открыть список чатов", web_app=WebAppInfo(url=settings.WEB_APP_URL))
+            ]
+        ]
+    ))
+    # await activate_sender(message, state)
 
 
 @router.message(or_f(StateFilter(None), and_f(F.text.contains('Отправить сообщение'), OrderSend.write_text)))

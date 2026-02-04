@@ -13,6 +13,7 @@ class Settings(BaseSettings):
     ADMINS_2: str
     SERVICE_PORT: int
     SERVICE_TOKEN: str
+    WEB_APP_URL: str
 
 
 settings = Settings() # type: ignore
