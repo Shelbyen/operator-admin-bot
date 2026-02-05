@@ -3,6 +3,7 @@ import asyncio
 import uvicorn
 from aiogram import Dispatcher
 from aiogram.fsm.context import FSMContext
+from aiogram.fsm.storage.redis import RedisStorage
 from fastapi import FastAPI, HTTPException, Header, Depends
 
 from services.operator_helper.handlers.operator import OrderSend
@@ -12,8 +13,10 @@ from src.services.admin.middlewares.album_middleware import AlbumMiddleware
 from src.services.admin.middlewares.log_middleware import LogMiddleware
 from src.services.operator_helper.bot import operator_bot
 
+redis_storage = RedisStorage.from_url(settings.REDIS_URL)
+
 app = FastAPI(title="OperatorBot API")
-dp = Dispatcher()
+dp = Dispatcher(storage=redis_storage)
 
 async def verify_bearer_token(authorization: str | None = Header(None)):
     if authorization is None or not authorization.startswith("Bearer "):

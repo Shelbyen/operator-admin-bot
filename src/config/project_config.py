@@ -14,6 +14,7 @@ class Settings(BaseSettings):
     SERVICE_PORT: int
     SERVICE_TOKEN: str
     WEB_APP_URL: str
+    REDIS_URL: str
 
 
 settings = Settings() # type: ignore
