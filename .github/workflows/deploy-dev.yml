@@ -1,0 +1,41 @@
+name: Deploy Operator Admin
+on:
+  push:
+    branches:
+      - develop
+jobs:
+  deploy:
+    runs-on: [self-hosted, dev]
+    environment: dev
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: create .env file
+        run: |
+          cat <<EOF > .env
+          REDIS_PORT=${{ vars.REDIS_PORT }}
+          ADMIN_TOKEN=${{ secrets.ADMIN_TOKEN }}
+          OPERATOR_TOKEN=${{ secrets.OPERATOR_TOKEN }}
+      
+          ADMINS=${{ vars.ADMINS }}
+          ADMINS_1=${{ vars.ADMINS_1 }}
+          ADMINS_2=${{ vars.ADMINS_2 }}
+      
+          POSTGRES_USER=${{ vars.POSTGRES_USER }}
+          POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD }}
+          POSTGRES_HOST=${{ vars.POSTGRES_HOST }}
+          POSTGRES_PORT=${{ vars.POSTGRES_PORT }}
+          POSTGRES_DB=${{ vars.POSTGRES_DB }}
+          DB_ECHO_LOG=${{ vars.DB_ECHO_LOG }}
+      
+          SERVICE_PORT=${{ vars.SERVICE_PORT }}
+          SERVICE_TOKEN=${{ secrets.SERVICE_TOKEN }}
+          EOF
+
+      - name: Build and run
+        run: |
+          docker compose build
+          docker compose up -d --remove-orphans
+        
